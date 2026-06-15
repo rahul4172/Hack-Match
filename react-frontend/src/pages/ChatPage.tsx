@@ -3,7 +3,6 @@ import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { useLocation } from 'react-router-dom';
 import { importPrivateKey, importPublicKey, deriveSharedSecret, encryptMessage, decryptMessage } from '../lib/crypto';
-import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 
 export default function ChatPage() {
