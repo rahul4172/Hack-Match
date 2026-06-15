@@ -1,25 +1,30 @@
-const API_URL = 'http://localhost:3000';
+import axios from 'axios';
 
-export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+const API = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+
+// Add request interceptor to attach token
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  const headers = new Headers(options.headers || {});
-  
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
+  return config;
+});
+
+export default API;
+
+// Keeping fetchAPI for backward compatibility with existing components
+export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+  try {
+    const method = (options.method || 'GET').toUpperCase();
+    const res = await API({
+      url: endpoint,
+      method,
+      data: options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
+      headers: options.headers as any
+    });
+    return res.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || `Request failed with status ${error.response?.status}`);
   }
-
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.error || `Request failed with status ${res.status}`);
-  }
-
-  return res.json();
 }

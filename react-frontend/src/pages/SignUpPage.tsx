@@ -40,12 +40,12 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-60px)] items-center justify-center p-8">
-      <div className="glass p-8 rounded-xl max-w-md w-full border border-white/10">
-        <h2 className="text-3xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+    <div className="flex min-h-[calc(100vh-60px)] items-center justify-center px-4 py-8">
+      <div className="glass p-6 sm:p-8 rounded-xl w-full max-w-md border border-white/10">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
           Create Identity
         </h2>
-        {error && <div className="text-red-400 text-sm mb-4 text-center">{error}</div>}
+        {error && <div className="text-red-400 text-sm mb-4 text-center bg-red-500/10 border border-red-500/30 rounded-lg p-3">{error}</div>}
         <form onSubmit={handleSignUp} className="space-y-4">
           <div>
             <label className="block text-sm font-mono text-gray-400 mb-1">Name</label>
@@ -53,7 +53,7 @@ export default function SignUpPage() {
               type="text" 
               value={name} 
               onChange={e => setName(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors text-sm"
               required
             />
           </div>
@@ -63,7 +63,7 @@ export default function SignUpPage() {
               type="email" 
               value={email} 
               onChange={e => setEmail(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors text-sm"
               required
             />
           </div>
@@ -73,7 +73,7 @@ export default function SignUpPage() {
               type="password" 
               value={password} 
               onChange={e => setPassword(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 transition-colors text-sm"
               required
             />
           </div>

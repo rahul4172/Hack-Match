@@ -37,18 +37,23 @@ export default function OnboardingPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-[calc(100vh-60px)] flex items-center justify-center p-8">
-      <div className="max-w-2xl w-full glass p-8 rounded-xl border border-cyan-500/30 relative overflow-hidden">
-        <h1 className="text-4xl font-extrabold mb-6 text-cyan-400">Welcome to the Network, {user.name}</h1>
-        <p className="text-gray-400 mb-8 font-mono">Configure your developer identity.</p>
+    <div className="min-h-[calc(100vh-60px)] flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-2xl glass p-6 sm:p-8 rounded-xl border border-cyan-500/30 relative overflow-hidden">
+        {/* Glow effect */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 blur-[80px] pointer-events-none rounded-full -mr-12 -mt-12" />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <h1 className="text-2xl sm:text-4xl font-extrabold mb-2 sm:mb-3 text-cyan-400 leading-tight">
+          Welcome to the Network,<br className="sm:hidden" /> {user.name} 👋
+        </h1>
+        <p className="text-gray-400 mb-6 sm:mb-8 font-mono text-sm">Configure your developer identity.</p>
+
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 relative z-10">
           <div>
             <label className="block text-sm font-mono text-gray-400 mb-2">Primary Role</label>
             <select
               value={role}
               onChange={e => setRole(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500"
+              className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 text-sm appearance-none"
             >
               <option>Frontend Engineer</option>
               <option>Backend Engineer</option>
@@ -66,7 +71,7 @@ export default function OnboardingPage() {
               value={bio}
               onChange={e => setBio(e.target.value)}
               placeholder="What are you building or looking to build?"
-              className="w-full h-32 bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 resize-none"
+              className="w-full h-28 sm:h-32 bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-cyan-500 resize-none text-sm"
             />
           </div>
 

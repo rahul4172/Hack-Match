@@ -4,12 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-[#0D1117] text-[#C9D1D9] font-sans antialiased overflow-x-hidden;
+    @apply bg-[#050505] text-[#C9D1D9] font-sans antialiased overflow-x-hidden;
     margin: 0;
   }
   
   ::selection {
-    @apply bg-[#58A6FF]/30 text-[#58A6FF];
+    @apply bg-[#BC8CFF]/40 text-[#fff];
   }
 
   ::-webkit-scrollbar {
@@ -43,29 +43,48 @@
   }
   
   .glass {
-    @apply bg-[#161B22]/80 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)];
+    @apply bg-[#161B22]/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.8)];
   }
   
   .text-glow {
-    text-shadow: 0 0 20px rgba(88, 166, 255, 0.5); /* blue glow */
+    text-shadow: 0 0 20px rgba(188, 140, 255, 0.7); /* purple glow */
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 20px rgba(88, 166, 255, 0.7); /* cyan glow */
   }
 
   .ultra-glass {
-    @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_0_rgba(31,38,135,0.37)];
+    @apply bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-3xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.5)];
+  }
+
+  .ultra-glass-hover {
+    @apply hover:bg-white/10 hover:border-white/30 transition-all duration-300;
+  }
+
+  /* Deep Space Aurora Background */
+  .aurora-bg {
+    background: radial-gradient(circle at 15% 50%, rgba(88, 166, 255, 0.15), transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(188, 140, 255, 0.15), transparent 40%),
+                radial-gradient(circle at 50% 80%, rgba(63, 185, 80, 0.1), transparent 40%);
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
   }
 
   .ai-orb-1 {
-    @apply absolute w-96 h-96 bg-[#58A6FF]/20 rounded-full blur-[120px] pointer-events-none;
+    @apply absolute w-[500px] h-[500px] bg-[#58A6FF]/30 rounded-full blur-[150px] pointer-events-none mix-blend-screen;
     animation: float-orb 20s ease-in-out infinite;
   }
 
   .ai-orb-2 {
-    @apply absolute w-96 h-96 bg-[#BC8CFF]/20 rounded-full blur-[120px] pointer-events-none;
+    @apply absolute w-[600px] h-[600px] bg-[#BC8CFF]/20 rounded-full blur-[150px] pointer-events-none mix-blend-screen;
     animation: float-orb 25s ease-in-out infinite reverse;
   }
 
   .ai-orb-3 {
-    @apply absolute w-96 h-96 bg-[#3FB950]/10 rounded-full blur-[120px] pointer-events-none;
+    @apply absolute w-[400px] h-[400px] bg-[#FF7B72]/15 rounded-full blur-[150px] pointer-events-none mix-blend-screen;
     animation: float-orb 30s ease-in-out infinite 5s;
   }
 

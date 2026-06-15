@@ -47,39 +47,39 @@ export default function SpotlightPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-4">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
           Project Spotlight
         </h1>
         {user && (
-          <Button variant="primary" onClick={() => setShowForm(!showForm)}>
+          <Button variant="primary" onClick={() => setShowForm(!showForm)} className="w-full sm:w-auto">
             {showForm ? 'Cancel' : 'Share Project _'}
           </Button>
         )}
       </div>
 
       {showForm && (
-        <div className="glass p-6 rounded-xl mb-8 border border-orange-500/30 max-w-2xl">
-          <h2 className="text-xl font-bold mb-4 text-orange-400">Share Your Latest Build</h2>
+        <div className="glass p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border border-orange-500/30 w-full max-w-2xl">
+          <h2 className="text-lg sm:text-xl font-bold mb-4 text-orange-400">Share Your Latest Build</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm text-gray-400 mb-1">Project Title</label>
-              <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500" />
+              <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500 focus:outline-none text-sm" />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Description</label>
-              <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500 h-24" />
+              <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500 focus:outline-none h-24 text-sm" />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Project Link (GitHub / Live URL)</label>
-              <input required value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500" />
+              <input required value={formData.link} onChange={e => setFormData({...formData, link: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500 focus:outline-none text-sm" />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Tags (comma separated)</label>
-              <input value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} placeholder="React, AI, Web3..." className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500" />
+              <input value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} placeholder="React, AI, Web3..." className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500 focus:outline-none text-sm" />
             </div>
-            <Button type="submit" variant="primary" disabled={submitting}>
+            <Button type="submit" variant="primary" disabled={submitting} className="w-full sm:w-auto">
               {submitting ? 'Sharing...' : 'Share Now'}
             </Button>
           </form>
@@ -87,21 +87,21 @@ export default function SpotlightPage() {
       )}
 
       {loading ? (
-        <div className="text-orange-500 animate-pulse font-mono">Loading projects...</div>
+        <div className="text-orange-500 animate-pulse font-mono text-sm">Loading projects...</div>
       ) : projects.length === 0 ? (
-        <div className="text-gray-500 italic">No projects shared yet.</div>
+        <div className="text-gray-500 italic text-sm">No projects shared yet.</div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {projects.map(p => {
             let tags: string[] = [];
             try { tags = JSON.parse(p.tags || '[]'); } catch (e) {}
             
             return (
-              <div key={p.id} className="glass p-6 rounded-xl border border-white/5 hover:border-orange-500/30 transition-all flex flex-col h-full relative overflow-hidden">
+              <div key={p.id} className="glass p-5 sm:p-6 rounded-xl border border-white/5 hover:border-orange-500/30 transition-all flex flex-col h-full relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl pointer-events-none -mr-10 -mt-10"></div>
                 
-                <h3 className="text-2xl font-bold text-white mb-2">{p.title}</h3>
-                <p className="text-gray-300 mb-4 flex-1">{p.description}</p>
+                <h3 className="text-lg sm:text-2xl font-bold text-white mb-2">{p.title}</h3>
+                <p className="text-gray-300 mb-4 flex-1 text-sm sm:text-base">{p.description}</p>
                 
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
@@ -113,15 +113,15 @@ export default function SpotlightPage() {
                   </div>
                 )}
                 
-                <div className="flex justify-between items-end mt-auto pt-4 border-t border-white/5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xs font-bold">
+                <div className="flex justify-between items-center mt-auto pt-4 border-t border-white/5 gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-xs font-bold shrink-0">
                       {p.author_name.charAt(0)}
                     </div>
-                    <span className="text-sm text-gray-400">{p.author_name}</span>
+                    <span className="text-xs sm:text-sm text-gray-400 truncate">{p.author_name}</span>
                   </div>
                   
-                  <a href={p.link} target="_blank" rel="noreferrer" className="text-cyan-400 hover:text-cyan-300 font-mono text-sm">
+                  <a href={p.link} target="_blank" rel="noreferrer" className="text-cyan-400 hover:text-cyan-300 font-mono text-xs sm:text-sm whitespace-nowrap">
                     [ View Project ]
                   </a>
                 </div>

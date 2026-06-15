@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: hackmatch
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: JWT_SECRET
+        generateValue: true
+    # disk: # Uncomment if you need a persistent SQLite database
+    #   name: data
+    #   mountPath: /app/data
+    #   sizeGB: 1

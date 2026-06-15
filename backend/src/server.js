@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -8,11 +11,27 @@ import db, { initDB } from './db.js';
 import crypto from 'crypto';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const requiredEnv = ['JWT_SECRET', 'CORS_ORIGIN'];
+requiredEnv.forEach((envVar) => {
+  if (!process.env[envVar]) {
+    throw new Error(`Missing required environment variable: ${envVar}`);
+  }
+});
 
 const app = express();
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
+
+app.get('/health', (req, res) => {
+  res.json({ status: "ok", env: process.env.NODE_ENV, timestamp: Date.now() });
+});
 
 const apiLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 200 });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many attempts. Try again later.' } });
@@ -30,7 +49,7 @@ initDB().then(() => {
   });
 });
 
-const JWT_SECRET = 'supersecret_hackmatch_key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware to protect routes
 function authenticate(req, res, next) {
@@ -100,6 +119,22 @@ app.post('/auth/guest', authLimiter, (req, res) => {
     // Token explicitly expires in 10 minutes
     const token = jwt.sign({ id, email: guestEmail, is_guest: true }, JWT_SECRET, { expiresIn: '10m' });
     res.json({ token, user: { id, email: guestEmail, name: 'Guest User', role: 'Guest Explorer', is_guest: true } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/auth/logout', authenticate, (req, res) => {
+  try {
+    if (req.user.is_guest) {
+      // Clean up guest data forever
+      db.prepare('DELETE FROM connections WHERE sender_id = ? OR receiver_id = ?').run(req.user.id, req.user.id);
+      db.prepare('DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?').run(req.user.id, req.user.id);
+      db.prepare('DELETE FROM team_signals WHERE user_id = ?').run(req.user.id);
+      db.prepare('DELETE FROM ideas WHERE creator_id = ?').run(req.user.id);
+      db.prepare('DELETE FROM users WHERE id = ?').run(req.user.id);
+    }
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -606,4 +641,12 @@ app.get('/stories/:id', (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Fallback to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
