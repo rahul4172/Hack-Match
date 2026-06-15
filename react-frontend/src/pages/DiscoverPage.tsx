@@ -75,13 +75,6 @@ export default function DiscoverPage() {
     }
   };
 
-  const getHackScoreBadge = (score: number = 0) => {
-    if (score >= 850) return { label: 'Legend', color: 'text-yellow-300 border-yellow-300/50 bg-yellow-300/10' };
-    if (score >= 600) return { label: 'Veteran', color: 'text-purple-400 border-purple-400/50 bg-purple-400/10' };
-    if (score >= 300) return { label: 'Builder', color: 'text-blue-400 border-blue-400/50 bg-blue-400/10' };
-    return { label: 'Spark', color: 'text-gray-400 border-gray-400/50 bg-gray-400/10' };
-  };
-
   const handleConnect = async (receiverId: string) => {
     try {
       await fetchAPI('/connections/request', {
