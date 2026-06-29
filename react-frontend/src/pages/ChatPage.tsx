@@ -20,6 +20,11 @@ export default function ChatPage() {
 
   const [clashes, setClashes] = useState<any[]>([]);
   const [clashCode, setClashCode] = useState('');
+  const [challenge, setChallenge] = useState<any>(null);
+  const [connectionId, setConnectionId] = useState<string | null>(null);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [clashError, setClashError] = useState('');
+  const [clashLoading, setClashLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -54,21 +59,46 @@ export default function ChatPage() {
 
     fetchAPI(`/connections/${activeChat.user_id}/clashes`).then(data => {
       setClashes(data.clashes || []);
+      if (data.connectionId) setConnectionId(data.connectionId);
     });
+
+    fetchAPI(`/connections/${activeChat.user_id}/clash/challenge`).then(data => {
+      setChallenge(data.challenge);
+      setConnectionId(data.connectionId);
+      setShowAnswer(false);
+      setClashError('');
+    }).catch(() => setChallenge(null));
   }, [activeChat]);
+
+  const handleRevealAnswer = async () => {
+    if (!activeChat) return;
+    try {
+      const data = await fetchAPI(`/connections/${activeChat.user_id}/clash/challenge?reveal=true`);
+      setChallenge(data.challenge);
+      setShowAnswer(true);
+    } catch {
+      setShowAnswer(true);
+    }
+  };
 
   const handleClashSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clashCode.trim()) return;
+    if (!clashCode.trim() || !connectionId) return;
+    setClashLoading(true);
+    setClashError('');
     try {
-      await fetchAPI(`/connections/${activeChat.id}/clash`, {
+      await fetchAPI(`/connections/${connectionId}/clash`, {
         method: 'POST',
-        body: JSON.stringify({ code: clashCode })
+        body: JSON.stringify({ code: clashCode }),
       });
       const data = await fetchAPI(`/connections/${activeChat.user_id}/clashes`);
       setClashes(data.clashes || []);
-    } catch (err) {
-      alert("Failed to submit code");
+      setClashCode('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to submit code';
+      setClashError(msg);
+    } finally {
+      setClashLoading(false);
     }
   };
 
@@ -279,27 +309,61 @@ export default function ChatPage() {
                 </p>
                 
                 {!hasISubmitted ? (
-                  <form onSubmit={handleClashSubmit} className="w-full max-w-lg ultra-glass p-4 sm:p-6 rounded-2xl border border-white/10 text-left shadow-[0_0_40px_rgba(0,0,0,0.8)] z-10 transform transition-all hover:border-cyan-500/50">
+                  <form onSubmit={handleClashSubmit} className="w-full max-w-lg glass-card p-4 sm:p-6 text-left z-10 mx-2">
                     <div className="flex gap-2 mb-4">
-                      <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.8)]"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]"></div>
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
                     </div>
-                    <h3 className="text-[#58A6FF] font-mono mb-2 text-sm sm:text-base text-glow">Challenge: Return True</h3>
-                    <p className="text-xs text-[#8B949E] mb-4">Write a brief implementation to verify humanity.</p>
-                    <textarea 
-                      className="w-full h-28 sm:h-32 bg-[#010409] border border-[#30363D] rounded font-mono text-[#3FB950] p-3 focus:border-[#58A6FF] outline-none mb-4 custom-scrollbar text-xs sm:text-sm leading-relaxed"
-                      placeholder="function isAlive() { return true; }"
-                      value={clashCode}
-                      onChange={e => setClashCode(e.target.value)}
-                    />
-                    <button type="submit" className="w-full py-2 bg-[#58A6FF] text-[#0D1117] font-bold rounded hover:bg-[#58A6FF]/80 transition-colors text-sm">
-                      git commit -m "solution"
-                    </button>
+
+                    {challenge ? (
+                      <>
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <h3 className="text-violet-400 font-display font-semibold text-base">{challenge.title}</h3>
+                          <span className="text-[10px] font-mono text-slate-500 uppercase shrink-0">{challenge.language}</span>
+                        </div>
+                        <p className="text-sm text-slate-300 mb-2 leading-relaxed">{challenge.prompt}</p>
+                        <p className="text-xs text-cyan-400/80 font-mono mb-4">💡 Hint: {challenge.hint}</p>
+
+                        {showAnswer && challenge.answer && (
+                          <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                            <p className="text-[10px] uppercase tracking-wider text-emerald-400 font-mono mb-2">Reference Solution</p>
+                            <pre className="text-xs text-emerald-300 font-mono whitespace-pre-wrap break-all">{challenge.answer}</pre>
+                          </div>
+                        )}
+
+                        <textarea
+                          className="input-field font-mono text-emerald-400 h-28 sm:h-32 mb-3 resize-none"
+                          placeholder="// Write your solution here..."
+                          value={clashCode}
+                          onChange={e => setClashCode(e.target.value)}
+                          spellCheck={false}
+                        />
+
+                        {clashError && (
+                          <p className="text-red-400 text-xs font-mono mb-3 p-2 bg-red-500/10 rounded-lg border border-red-500/20">{clashError}</p>
+                        )}
+
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <button type="submit" disabled={clashLoading} className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-violet-500 text-white font-display font-semibold rounded-[14px] text-sm min-h-[44px] disabled:opacity-50">
+                            {clashLoading ? 'Validating...' : 'git commit -m "solution"'}
+                          </button>
+                          {!showAnswer && (
+                            <button type="button" onClick={handleRevealAnswer} className="py-2.5 px-4 border border-white/10 text-slate-400 hover:text-white rounded-[14px] text-sm font-mono min-h-[44px] transition-colors">
+                              Reveal Answer
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-slate-600 mt-3 font-mono">Both teammates must submit valid solutions to unlock chat.</p>
+                      </>
+                    ) : (
+                      <p className="text-slate-400 text-sm animate-pulse">Loading challenge...</p>
+                    )}
                   </form>
                 ) : (
-                  <div className="text-[#BC8CFF] animate-pulse font-mono bg-[#BC8CFF]/10 border border-[#BC8CFF]/30 p-4 sm:p-6 rounded-xl text-sm text-center max-w-md z-10 shadow-[0_0_20px_rgba(188,140,255,0.2)] text-glow">
-                    Push successful. Waiting for remote ({activeChat.name}) to sync...
+                  <div className="text-violet-300 font-mono glass-card p-4 sm:p-6 text-sm text-center max-w-md z-10 mx-2">
+                    <p className="mb-2">✓ Push successful</p>
+                    <p className="text-slate-400 text-xs">Waiting for {activeChat.name} to submit their solution...</p>
                   </div>
                 )}
               </div>

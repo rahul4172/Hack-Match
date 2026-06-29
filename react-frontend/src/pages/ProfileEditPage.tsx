@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
+import { GlowCard } from '../components/ui/GlowCard';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export default function ProfileEditPage() {
   const { user, updateProfile } = useAuth();
@@ -70,10 +72,10 @@ export default function ProfileEditPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <h1 className="text-3xl sm:text-4xl font-extrabold mb-6 sm:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-[#58A6FF] to-[#BC8CFF] font-mono">Profile_Config</h1>
-      
-      {/* Gamification / Status Section */}
-      <div className="mb-8 sm:mb-10 ultra-glass p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row gap-6 sm:gap-8 items-center relative overflow-hidden">
+      <PageHeader title="Profile Config" subtitle="Customize your developer identity" />
+
+      <GlowCard variant="cyan" tilt={false} className="mb-8 sm:mb-10">
+        <div className="p-5 sm:p-6 flex flex-col sm:flex-row gap-6 sm:gap-8 items-center relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#58A6FF]/10 blur-[50px] pointer-events-none" />
         
         <div className="flex-shrink-0 text-center relative">
@@ -117,11 +119,13 @@ export default function ProfileEditPage() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </GlowCard>
       
-      {msg && <div className="mb-4 p-3 bg-gray-800 border border-gray-700 text-cyan-300 rounded-md text-sm">{msg}</div>}
+      {msg && <div className="mb-4 p-3 bg-[#58A6FF]/10 border border-[#58A6FF]/30 text-[#58A6FF] rounded-xl text-sm">{msg}</div>}
       
-      <form onSubmit={handleSave} className="space-y-5 sm:space-y-6 ultra-glass p-5 sm:p-8 rounded-2xl relative z-10">
+      <GlowCard variant="purple" tilt={false}>
+      <form onSubmit={handleSave} className="space-y-5 sm:space-y-6 p-5 sm:p-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Name</label>
@@ -169,6 +173,7 @@ export default function ProfileEditPage() {
           {loading ? 'Saving...' : 'Save Profile'}
         </Button>
       </form>
+      </GlowCard>
     </div>
   );
 }

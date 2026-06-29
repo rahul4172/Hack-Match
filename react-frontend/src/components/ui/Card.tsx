@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
@@ -50,7 +48,7 @@ export const Card: React.FC<CardProps> = ({ children, onSwipe }) => {
       animate={{ x: exitX }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       whileTap={{ cursor: 'grabbing' }}
-      className="absolute w-[384px] h-[500px] glass rounded-2xl overflow-hidden cursor-grab flex flex-col group"
+      className="absolute w-full max-w-[384px] h-[min(500px,68vh)] left-1/2 -translate-x-1/2 glass rounded-2xl overflow-hidden cursor-grab flex flex-col group"
     >
       {/* Glossy reflection effect */}
       <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />

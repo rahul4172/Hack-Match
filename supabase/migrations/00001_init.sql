@@ -1,92 +1,118 @@
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- HackMatch full schema for Supabase PostgreSQL
+-- Run via Supabase SQL Editor or: supabase db push
 
--- USERS TABLE
-CREATE TYPE role_enum AS ENUM ('frontend', 'backend', 'ml', 'blockchain', 'mobile', 'ux', 'devops', 'pm', 'fullstack');
-CREATE TYPE availability_enum AS ENUM ('this_weekend', 'next_2_weeks', 'this_month', 'flexible');
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    github_id VARCHAR UNIQUE,
-    name VARCHAR(100),
-    email VARCHAR(255) UNIQUE,
-    avatar_url TEXT,
-    bio VARCHAR(280),
-    role_primary role_enum,
-    role_secondary role_enum,
-    skills TEXT[],
-    availability availability_enum,
-    win_count INTEGER DEFAULT 0,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    last_active_at TIMESTAMPTZ DEFAULT now()
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE,
+  password TEXT,
+  name TEXT,
+  role TEXT,
+  bio TEXT,
+  skills TEXT DEFAULT '[]',
+  winnings TEXT,
+  learnings TEXT,
+  github TEXT,
+  linkedin TEXT,
+  avatar TEXT,
+  public_key TEXT,
+  hack_score INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- SWIPES TABLE
-CREATE TYPE direction_enum AS ENUM ('like', 'pass');
-
-CREATE TABLE swipes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    swiper_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    swiped_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    direction direction_enum NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE(swiper_id, swiped_id)
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT,
+  description TEXT,
+  link TEXT,
+  tags TEXT DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- MATCHES TABLE
-CREATE TYPE match_status_enum AS ENUM ('active', 'archived', 'blocked');
-
-CREATE TABLE matches (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_a_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    user_b_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    status match_status_enum DEFAULT 'active',
-    created_at TIMESTAMPTZ DEFAULT now(),
-    CONSTRAINT enforce_ordering CHECK (user_a_id < user_b_id),
-    UNIQUE(user_a_id, user_b_id)
+CREATE TABLE IF NOT EXISTS connections (
+  id TEXT PRIMARY KEY,
+  sender_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  status TEXT DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- MESSAGES TABLE
-CREATE TYPE message_type_enum AS ENUM ('text', 'code', 'link', 'file');
-
-CREATE TABLE messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    match_id UUID REFERENCES matches(id) ON DELETE CASCADE,
-    sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    type message_type_enum DEFAULT 'text',
-    read_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT now()
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  sender_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Row Level Security (RLS) configuration
-
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE swipes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-
--- Profiles: Anyone can view active users, only owner can edit
-CREATE POLICY "Users can view active profiles" ON users FOR SELECT USING (is_active = true);
-CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
-
--- Swipes: Users can only see their own swipes and create their own
-CREATE POLICY "Users can view own swipes" ON swipes FOR SELECT USING (auth.uid() = swiper_id);
-CREATE POLICY "Users can insert own swipes" ON swipes FOR INSERT WITH CHECK (auth.uid() = swiper_id);
-
--- Matches: Users can only see matches they are part of
-CREATE POLICY "Users can view own matches" ON matches FOR SELECT USING (auth.uid() = user_a_id OR auth.uid() = user_b_id);
-
--- Messages: Users can see messages in their matches and send messages in their matches
-CREATE POLICY "Users can view match messages" ON messages FOR SELECT USING (
-    EXISTS (
-        SELECT 1 FROM matches m WHERE m.id = messages.match_id AND (m.user_a_id = auth.uid() OR m.user_b_id = auth.uid())
-    )
+CREATE TABLE IF NOT EXISTS team_signals (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  message TEXT,
+  role_needed TEXT,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
-CREATE POLICY "Users can send match messages" ON messages FOR INSERT WITH CHECK (
-    auth.uid() = sender_id AND 
-    EXISTS (
-        SELECT 1 FROM matches m WHERE m.id = messages.match_id AND (m.user_a_id = auth.uid() OR m.user_b_id = auth.uid())
-    )
+
+CREATE TABLE IF NOT EXISTS ideas (
+  id TEXT PRIMARY KEY,
+  creator_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT,
+  pitch TEXT,
+  roles_needed TEXT,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS hackathons (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  date TEXT,
+  prize_pool TEXT,
+  tech_stack_focus TEXT,
+  team_size TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_hackathons (
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  hackathon_id TEXT REFERENCES hackathons(id) ON DELETE CASCADE,
+  PRIMARY KEY (user_id, hackathon_id)
+);
+
+CREATE TABLE IF NOT EXISTS stack_clashes (
+  id TEXT PRIMARY KEY,
+  connection_id TEXT REFERENCES connections(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  challenge_id TEXT,
+  code TEXT,
+  submitted_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS reputation (
+  id TEXT PRIMARY KEY,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  score_component TEXT,
+  points INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS debriefs (
+  id TEXT PRIMARY KEY,
+  hackathon_id TEXT REFERENCES hackathons(id) ON DELETE CASCADE,
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+  project_link TEXT,
+  hardest_challenge TEXT,
+  do_differently TEXT,
+  teammate_rating INTEGER,
+  teammate_tags TEXT,
+  hack_again TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_connections_sender ON connections(sender_id);
+CREATE INDEX IF NOT EXISTS idx_connections_receiver ON connections(receiver_id);
+CREATE INDEX IF NOT EXISTS idx_messages_pair ON messages(sender_id, receiver_id);
+CREATE INDEX IF NOT EXISTS idx_team_signals_expires ON team_signals(expires_at);

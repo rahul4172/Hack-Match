@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
+import { GlowCard } from '../components/ui/GlowCard';
+import { PageHeader } from '../components/ui/PageHeader';
 import { useNavigate } from 'react-router-dom';
 
 export default function ConnectionsPage() {
@@ -17,7 +19,6 @@ export default function ConnectionsPage() {
       const data = await fetchAPI('/connections');
       setPending(data.pending);
       setAccepted(data.accepted);
-      
       const nearbyData = await fetchAPI('/users/nearby');
       setNearby(nearbyData);
     } catch (err) {
@@ -33,102 +34,102 @@ export default function ConnectionsPage() {
 
   const handleAccept = async (senderId: string) => {
     try {
-      await fetchAPI('/connections/accept', {
-        method: 'POST',
-        body: JSON.stringify({ senderId })
-      });
+      await fetchAPI('/connections/accept', { method: 'POST', body: JSON.stringify({ senderId }) });
       loadConnections();
-    } catch (err) {
-      alert("Failed to accept");
+    } catch {
+      alert('Failed to accept');
     }
   };
 
-  if (!user) return <div className="p-8 text-center mt-16">Please sign in.</div>;
+  if (!user) return <div className="p-8 text-center mt-16 text-[#8B949E]">Please sign in.</div>;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-cyan-400">Network &amp; Connections</h1>
+      <PageHeader title="Network & Connections" subtitle="Manage your squad and find nearby devs" />
 
       {loading ? (
-        <div className="text-gray-500 font-mono">Loading data stream...</div>
+        <div className="text-[#8B949E] font-mono text-sm animate-pulse">Loading data stream...</div>
       ) : (
         <div className="space-y-10 sm:space-y-12">
-          {/* Pending Requests */}
           <section>
-            <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-purple-400">Pending Requests</span>
-              <span className="bg-purple-900/50 text-purple-300 text-xs py-1 px-2 rounded-full">{pending.length}</span>
+            <h2 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2 text-[#BC8CFF]">
+              Pending Requests
+              <span className="bg-[#BC8CFF]/10 text-[#BC8CFF] text-xs py-0.5 px-2 rounded-full border border-[#BC8CFF]/30">{pending.length}</span>
             </h2>
             {pending.length === 0 ? (
-              <p className="text-gray-500 text-sm italic">No pending requests.</p>
+              <p className="text-[#8B949E] text-sm">No pending requests.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {pending.map(req => (
-                  <div key={req.id} className="glass p-4 rounded-xl flex items-center justify-between border border-purple-500/20 gap-3">
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-white truncate">{req.name}</h4>
-                      <p className="text-xs text-cyan-400 font-mono truncate">{req.role}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {pending.map((req, i) => (
+                  <GlowCard key={req.id} variant="purple" delay={i * 0.05}>
+                    <div className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-white truncate">{req.name}</h4>
+                        <p className="text-xs text-[#58A6FF] font-mono truncate">{req.role}</p>
+                      </div>
+                      <Button variant="primary" size="sm" onClick={() => handleAccept(req.sender_id)} className="shrink-0">Accept _</Button>
                     </div>
-                    <Button variant="primary" size="sm" onClick={() => handleAccept(req.sender_id)} className="shrink-0">Accept _</Button>
-                  </div>
+                  </GlowCard>
                 ))}
               </div>
             )}
           </section>
 
-          {/* Accepted Connections */}
           <section>
-            <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-cyan-400">My Squad</span>
-              <span className="bg-cyan-900/50 text-cyan-300 text-xs py-1 px-2 rounded-full">{accepted.length}</span>
+            <h2 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2 text-[#58A6FF]">
+              My Squad
+              <span className="bg-[#58A6FF]/10 text-[#58A6FF] text-xs py-0.5 px-2 rounded-full border border-[#58A6FF]/30">{accepted.length}</span>
             </h2>
             {accepted.length === 0 ? (
-              <p className="text-gray-500 text-sm italic">You haven't connected with anyone yet. Go to Discover to find teammates.</p>
+              <p className="text-[#8B949E] text-sm">No connections yet — head to Discover to find teammates.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {accepted.map(conn => (
-                  <div key={conn.id} className="glass p-4 rounded-xl flex items-center justify-between border border-cyan-500/20 hover:border-cyan-500/50 transition-colors gap-3">
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-white truncate">{conn.name}</h4>
-                      <p className="text-xs text-gray-400 font-mono truncate">{conn.role}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {accepted.map((conn, i) => (
+                  <GlowCard key={conn.id} variant="cyan" delay={i * 0.05}>
+                    <div className="p-4 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-white truncate">{conn.name}</h4>
+                        <p className="text-xs text-[#8B949E] font-mono truncate">{conn.role}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => navigate('/chat', { state: { targetUser: conn } })} className="shrink-0">Message</Button>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => navigate('/chat', { state: { targetUser: conn } })} className="shrink-0">
-                      Message
-                    </Button>
-                  </div>
+                  </GlowCard>
                 ))}
               </div>
             )}
           </section>
 
-          {/* Nearby Developers */}
           <section>
-            <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2">
-              <span className="text-green-400">Nearby Developers</span>
-              <span className="bg-green-900/50 text-green-300 text-xs py-1 px-2 rounded-full">{nearby.length}</span>
+            <h2 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2 text-[#3FB950]">
+              Nearby Developers
+              <span className="bg-[#3FB950]/10 text-[#3FB950] text-xs py-0.5 px-2 rounded-full border border-[#3FB950]/30">{nearby.length}</span>
             </h2>
             {nearby.length === 0 ? (
-              <p className="text-gray-500 text-sm italic">No developers found in your area.</p>
+              <p className="text-[#8B949E] text-sm">No developers found nearby.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {nearby.map(dev => (
-                  <div key={dev.id} className="glass p-5 rounded-xl flex flex-col items-center text-center border border-green-500/20 hover:border-green-500/50 transition-all shadow-[0_0_15px_rgba(34,197,94,0.05)] hover:shadow-[0_0_20px_rgba(34,197,94,0.1)]">
-                    <img src={dev.avatar} alt={dev.name} className="w-14 h-14 sm:w-16 sm:h-16 rounded-full mb-3 border-2 border-green-500/50" />
-                    <h4 className="font-bold text-white mb-1 text-sm sm:text-base">{dev.name}</h4>
-                    <p className="text-xs text-green-400 font-mono mb-2">{dev.role}</p>
-                    <p className="text-xs text-gray-400 mb-3 leading-relaxed line-clamp-2">{dev.bio}</p>
-                    <div className="text-[10px] text-gray-500 font-mono bg-black/50 px-2 py-1 rounded mb-4 w-full truncate">
-                      📍 {dev.location}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nearby.map((dev, i) => (
+                  <GlowCard key={dev.id} variant="green" delay={i * 0.06}>
+                    <div className="p-5 flex flex-col items-center text-center h-full">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full mb-3 border-2 border-[#3FB950]/40 overflow-hidden bg-[#161B22] flex items-center justify-center text-2xl">
+                        {dev.avatar ? <img src={dev.avatar} alt={dev.name} className="w-full h-full object-cover" /> : '👤'}
+                      </div>
+                      <h4 className="font-bold text-white mb-1">{dev.name}</h4>
+                      <p className="text-xs text-[#3FB950] font-mono mb-2">{dev.role}</p>
+                      <p className="text-xs text-[#8B949E] mb-3 line-clamp-2 flex-1">{dev.bio}</p>
+                      <div className="text-[10px] text-[#8B949E] font-mono bg-black/40 px-2 py-1 rounded-lg mb-4 w-full truncate">📍 {dev.location}</div>
+                      <Button variant="primary" className="w-full text-sm mt-auto" onClick={async () => {
+                        try {
+                          await fetchAPI('/connections/request', { method: 'POST', body: JSON.stringify({ receiverId: dev.id }) });
+                          alert('Connection request sent!');
+                        } catch (e: unknown) {
+                          alert(e instanceof Error ? e.message : 'Error sending request');
+                        }
+                      }}>
+                        Connect +
+                      </Button>
                     </div>
-                    <Button variant="primary" className="w-full mt-auto text-sm" onClick={async () => {
-                      try {
-                        await fetchAPI('/connections/request', { method: 'POST', body: JSON.stringify({ receiverId: dev.id }) });
-                        alert('Connection request sent!');
-                      } catch (e: any) { alert(e.message || 'Error sending request'); }
-                    }}>
-                      Connect +
-                    </Button>
-                  </div>
+                  </GlowCard>
                 ))}
               </div>
             )}

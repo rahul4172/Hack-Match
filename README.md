@@ -1,72 +1,76 @@
 # HackMatch
 
-HackMatch is a full-stack platform for finding hackathons, matching with teammates based on skills, and connecting with the developer community. It features a React frontend and a Node.js Express backend.
+Hackathon teammate matching platform — React frontend + Express backend + **Supabase PostgreSQL**.
 
-## Prerequisites
+## What you need to provide (Supabase setup)
 
-- **Node.js**: v20 or newer
-- **Docker**: Optional, but recommended for easy full-stack deployment
+Create a free project at [supabase.com](https://supabase.com), then give yourself these values in `backend/.env`:
 
-## Local Development Setup
+| Variable | Where to find it |
+|----------|------------------|
+| `DATABASE_URL` | **Project Settings → Database → Connection string → URI** (use Session pooler for production, Direct for local dev) |
+| `JWT_SECRET` | Generate any long random string (e.g. `openssl rand -hex 32`) |
+| `CORS_ORIGIN` | Your frontend URL, e.g. `http://localhost:5173` |
 
-To run the project locally for development:
+Optional (for future Supabase Auth / Storage / Realtime):
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd HackMatch
-   ```
+| Variable | Where to find it |
+|----------|------------------|
+| `SUPABASE_URL` | **Project Settings → API → Project URL** |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Project Settings → API → service_role** (keep secret, server-only) |
 
-2. **Setup Environment Variables**
+### Setup steps
+
+1. Copy env files:
    ```bash
    cp backend/.env.example backend/.env
    cp react-frontend/.env.example react-frontend/.env
    ```
-   *Edit the `.env` files and add any required secrets (e.g. `JWT_SECRET`).*
 
-3. **Install Dependencies**
-   Using the included Makefile makes it simple:
+2. Paste your `DATABASE_URL` into `backend/.env`.
+
+3. Run the schema (either way):
+   - **Auto**: Start the backend — it runs `schema.sql` on boot.
+   - **Manual**: Paste `supabase/migrations/00001_init.sql` into Supabase **SQL Editor → Run**.
+
+4. Seed demo users (optional):
    ```bash
-   make install
+   cd backend && npm run seed
    ```
+   Log in with `alice@example.com` / `password123`.
 
-4. **Run the Development Servers**
+5. Run dev:
    ```bash
    make dev
    ```
 
-## Production Deployment
+## Stack Clash (chat unlock)
 
-This project is fully containerized and ready for 1-click self-hosting.
+Before encrypted chat opens, both teammates must submit a valid solution to the **same coding challenge** (picked per connection). Challenges include:
 
-### Using Docker Compose
+- Return True, Sum Two Numbers, Reverse String, FizzBuzz, First Element, Is Even
 
-```bash
-docker compose up --build -d
-```
-This command builds the frontend, copies it to the backend, and serves the full application on port `5000`.
+Users can click **Reveal Answer** to see the reference solution if stuck.
 
-### Cloud Platforms
-
-We include configuration files for popular platforms:
-- **Railway**: `railway up` (Uses Dockerfile and `railway.json`)
-- **Render**: Connect your GitHub repo and use the `render.yaml` blueprint.
-- **Fly.io**: `fly deploy` (Uses `fly.toml`)
-- **Vercel**: Deploy the frontend only using `vercel.json` and host backend separately.
-
-## Environment Variable Reference
+## Environment reference
 
 ### Backend (`backend/.env`)
 
-| Variable | Description | Default Value |
-|----------|-------------|---------------|
-| `PORT` | Port for the Express server to listen on | `5000` |
-| `NODE_ENV` | Environment type (`development` or `production`) | `production` |
-| `CORS_ORIGIN` | Allowed origin for CORS (e.g., frontend URL) | `*` |
-| `JWT_SECRET` | Secret key for signing JSON Web Tokens | (required) |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | Supabase PostgreSQL connection URI |
+| `JWT_SECRET` | Yes | Token signing secret |
+| `CORS_ORIGIN` | Yes | Frontend origin |
+| `PORT` | No | Default `5000` |
+| `DATABASE_SSL` | No | Default `true` |
 
 ### Frontend (`react-frontend/.env`)
 
-| Variable | Description | Default Value |
-|----------|-------------|---------------|
-| `VITE_API_URL` | URL of the backend API | `http://localhost:5000` |
+| Variable | Description |
+|----------|-------------|
+| `VITE_API_URL` | Backend URL, e.g. `http://localhost:5000` |
+
+## Deploy
+
+- **Backend**: Railway, Render, Fly.io (set `DATABASE_URL` + env vars)
+- **Frontend**: Vercel (`VITE_API_URL` → your API)
