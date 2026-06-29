@@ -5,6 +5,7 @@ import type { UserProfile } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { Lightbulb, Code2, Star, Box, Flame, Search, Heart, User, Check, Zap } from 'lucide-react';
 
 // --- Filter Component ---
 function FilterSidebar({
@@ -104,8 +105,8 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge }: any) {
         {u.avatar ? (
           <img src={u.avatar} alt="avatar" className="w-full h-full object-cover opacity-80 mix-blend-luminosity" draggable="false" />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-8xl">{isIdea ? '💡' : '💻'}</span>
+          <div className="absolute inset-0 flex items-center justify-center text-[#58A6FF]/20">
+            {isIdea ? <Lightbulb className="w-32 h-32" /> : <Code2 className="w-32 h-32" />}
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0D1117] via-[#0D1117]/40 to-transparent"></div>
@@ -129,9 +130,9 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge }: any) {
       <div className="p-6 flex-1 overflow-y-auto custom-scrollbar bg-[#0D1117]">
         {!isIdea && (
           <div className="flex gap-4 font-mono text-xs mb-6 text-[#C9D1D9] border-b border-white/5 pb-4">
-            <div className="flex flex-col items-center"><span className="font-bold text-white text-lg">⭐ {Math.floor(Math.random() * 300) + 10}</span>Stars</div>
-            <div className="flex flex-col items-center"><span className="font-bold text-white text-lg">📦 {Math.floor(Math.random() * 50) + 5}</span>Repos</div>
-            <div className="flex flex-col items-center"><span className="font-bold text-white text-lg">🔥 {Math.floor(Math.random() * 100)}</span>Streak</div>
+            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Star className="w-4 h-4 text-yellow-500" /> {Math.floor(Math.random() * 300) + 10}</span>Stars</div>
+            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Box className="w-4 h-4 text-purple-400" /> {Math.floor(Math.random() * 50) + 5}</span>Repos</div>
+            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Flame className="w-4 h-4 text-orange-500" /> {Math.floor(Math.random() * 100)}</span>Streak</div>
           </div>
         )}
 
@@ -327,15 +328,27 @@ export default function DiscoverPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center p-12 glass rounded-3xl w-full max-w-[400px] mt-12 border border-white/5 shadow-2xl">
-            <div className="text-6xl mb-6">🔍</div>
-            <h2 className="text-2xl font-bold text-white mb-3">No more devs found</h2>
-            <p className="text-gray-400 font-mono text-sm mb-8 leading-relaxed">You've reached the end of your local network queue. Try expanding your filters or broadcasting a signal.</p>
-            <div className="flex flex-col gap-3">
-              <Button onClick={() => setShowIdeaModal(true)} variant="outline" className="w-full">💡 Post an Idea</Button>
-              <Button onClick={() => setShowSignalModal(true)} variant="primary" className="w-full">🚨 Broadcast Signal</Button>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="text-center p-12 glass rounded-3xl w-full max-w-[400px] mt-12 border border-white/5 shadow-2xl relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#58A6FF]/5 to-transparent pointer-events-none"></div>
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 rounded-full bg-[#161B22] border border-white/10 flex items-center justify-center animate-pulse">
+                <Search className="w-10 h-10 text-[#58A6FF]" />
+              </div>
             </div>
-          </div>
+            <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">Radar Empty</h2>
+            <p className="text-gray-400 font-mono text-sm mb-8 leading-relaxed">No developers found in your current orbit. Expand your filters or broadcast a signal to the network.</p>
+            <div className="flex flex-col gap-3 relative z-10">
+              <Button onClick={() => setShowIdeaModal(true)} variant="outline" className="w-full flex justify-center items-center gap-2">
+                <Lightbulb className="w-4 h-4" /> Post an Idea
+              </Button>
+              <Button onClick={() => setShowSignalModal(true)} variant="primary" className="w-full flex justify-center items-center gap-2">
+                <Zap className="w-4 h-4" /> Broadcast Signal
+              </Button>
+            </div>
+          </motion.div>
         )}
       </div>
 
@@ -343,19 +356,23 @@ export default function DiscoverPage() {
       {matchModal && (
         <div className="fixed inset-0 z-[100] bg-[#050505]/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-in zoom-in duration-500">
           <div className="absolute inset-0 aurora-bg opacity-30"></div>
+          <div className="mb-6 animate-bounce">
+            <Heart className="w-20 h-20 text-[#3FB950] fill-[#3FB950]" />
+          </div>
           <h2 className="text-4xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#3FB950] to-[#58A6FF] mb-4 text-center z-10 text-glow">
-            Merge Request Accepted ❤️
+            Merge Request Accepted
           </h2>
-          <div className="text-[#3FB950] font-mono text-lg sm:text-xl mb-12">
-            git merge origin/love
+          <div className="text-[#3FB950] font-mono text-lg sm:text-xl mb-12 flex items-center gap-2">
+            <Check className="w-5 h-5" /> git merge origin/love
           </div>
           
-          <div className="flex gap-8 mb-12 relative z-10">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#58A6FF] shadow-[0_0_30px_rgba(88,166,255,0.4)]">
-              {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="you" /> : <div className="w-full h-full bg-gray-800 flex items-center justify-center text-4xl">👨‍💻</div>}
+          <div className="flex items-center gap-6 mb-12 z-10">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#58A6FF] overflow-hidden shadow-[0_0_30px_rgba(88,166,255,0.4)]">
+              {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="you" /> : <div className="w-full h-full bg-[#161B22] flex items-center justify-center"><User className="w-12 h-12 text-[#58A6FF]" /></div>}
             </div>
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#3FB950] shadow-[0_0_30px_rgba(63,185,80,0.4)]">
-              {matchModal.avatar ? <img src={matchModal.avatar} className="w-full h-full object-cover" alt="match" /> : <div className="w-full h-full bg-gray-800 flex items-center justify-center text-4xl">👩‍💻</div>}
+            <div className="text-gray-500 text-3xl font-mono">===</div>
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-[#3FB950] overflow-hidden shadow-[0_0_30px_rgba(63,185,80,0.4)]">
+              {matchModal.avatar ? <img src={matchModal.avatar} className="w-full h-full object-cover" alt="match" /> : <div className="w-full h-full bg-[#161B22] flex items-center justify-center"><User className="w-12 h-12 text-[#3FB950]" /></div>}
             </div>
           </div>
 

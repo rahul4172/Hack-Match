@@ -40,7 +40,7 @@ export default function OnboardingPage() {
           <div className="p-6 sm:p-8 relative">
             <div className="absolute top-0 right-0 w-40 h-40 bg-[#58A6FF]/10 blur-[60px] pointer-events-none rounded-full" />
             <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-[#58A6FF] to-[#BC8CFF]">
-              Welcome, {user.name} 👋
+              Welcome, {user.name}
             </h1>
             <p className="text-[#8B949E] mb-6 font-mono text-sm">Configure your developer identity</p>
 

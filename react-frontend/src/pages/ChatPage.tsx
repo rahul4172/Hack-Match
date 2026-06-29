@@ -3,7 +3,8 @@ import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { useLocation } from 'react-router-dom';
 import { importPrivateKey, importPublicKey, deriveSharedSecret, encryptMessage, decryptMessage } from '../lib/crypto';
-import 'highlight.js/styles/atom-one-dark.css';
+import 'highlight.js/styles/github-dark.css';
+import { FileText, Search, Settings, ArrowLeft, X, FileEdit, CornerDownLeft, Lock, Lightbulb, Check, Terminal } from 'lucide-react';
 
 export default function ChatPage() {
   const { user } = useAuth();
@@ -166,13 +167,13 @@ export default function ChatPage() {
       {/* Activity Bar — always visible on desktop, hidden on mobile when chat is open */}
       <div className={`w-10 sm:w-12 border-r border-[#30363D] flex-col items-center py-4 bg-[#010409] shrink-0 ${!showSidebar && activeChat ? 'hidden md:flex' : 'flex'}`}>
         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#C9D1D9] bg-[#1F6FEB]/20 border-l-2 border-[#58A6FF] text-sm">
-          📄
+          <FileText className="w-4 h-4" />
         </div>
         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#8B949E] hover:text-[#C9D1D9] cursor-pointer text-sm">
-          🔍
+          <Search className="w-4 h-4" />
         </div>
         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#8B949E] hover:text-[#C9D1D9] cursor-pointer text-sm">
-          ⚙️
+          <Settings className="w-4 h-4" />
         </div>
       </div>
 
@@ -215,16 +216,16 @@ export default function ChatPage() {
                 <span
                   className="md:hidden mr-1 cursor-pointer text-[#8B949E] hover:text-[#C9D1D9] text-base leading-none"
                   onClick={() => setShowSidebar(true)}
-                >←</span>
+                ><ArrowLeft className="w-4 h-4" /></span>
                 <span className="text-[#58A6FF]">{"{ }"}</span>
                 <span className="truncate max-w-[120px] sm:max-w-none">{activeChat.name.replace(/\s+/g, '_').toLowerCase()}.ts</span>
                 <span
-                  className="ml-1 text-[#8B949E] hover:bg-[#30363D] rounded-full px-1 cursor-pointer"
+                  className="ml-1 text-[#8B949E] hover:bg-[#30363D] rounded-full p-1 cursor-pointer"
                   onClick={() => setShowSidebar(true)}
-                >✕</span>
+                ><X className="w-4 h-4" /></span>
               </div>
               <div className="px-3 sm:px-4 py-2 border-r border-[#30363D] text-[#8B949E] hover:bg-[#161B22] flex items-center gap-2 text-xs sm:text-sm cursor-pointer whitespace-nowrap">
-                <span>📝</span> README.md
+                <FileEdit className="w-4 h-4" /> README.md
               </div>
             </div>
 
@@ -277,7 +278,7 @@ export default function ChatPage() {
                     <div className="flex items-center gap-2 px-2 text-[#C9D1D9] font-mono text-xs sm:text-sm">
                       <span className="text-[#3FB950] hidden sm:block">~/hackmatch/chat</span>
                       <span className="text-[#58A6FF] hidden sm:block">git:(master)</span>
-                      <span className="text-[#8B949E]">✗</span>
+                      <span className="text-[#8B949E]"><X className="w-4 h-4" /></span>
                     </div>
                     <div className="flex items-center mt-1 px-2">
                       <span className="text-[#C9D1D9] font-mono text-xs sm:text-sm mr-2">$</span>
@@ -293,7 +294,7 @@ export default function ChatPage() {
                       <button
                         type="submit"
                         className="md:hidden ml-2 text-[#58A6FF] text-lg leading-none shrink-0"
-                      >↵</button>
+                      ><CornerDownLeft className="w-4 h-4" /></button>
                     </div>
                     <button type="submit" className="hidden">Send</button>
                   </form>
@@ -302,7 +303,7 @@ export default function ChatPage() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 text-center bg-transparent z-10 relative">
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-none"></div>
-                <div className="mb-6 text-5xl sm:text-6xl text-glow z-10">🔒</div>
+                <div className="mb-6 text-5xl sm:text-6xl text-glow z-10 text-cyan-400 flex items-center justify-center"><Lock className="w-16 h-16" /></div>
                 <h2 className="text-xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 font-mono z-10 drop-shadow-[0_0_15px_rgba(88,166,255,0.5)]">Stack Clash Gate</h2>
                 <p className="text-[#8B949E] max-w-md mb-6 sm:mb-8 font-mono text-xs sm:text-sm px-2 z-10">
                   /* Prove your skills to unlock direct pair programming. */
@@ -323,7 +324,7 @@ export default function ChatPage() {
                           <span className="text-[10px] font-mono text-slate-500 uppercase shrink-0">{challenge.language}</span>
                         </div>
                         <p className="text-sm text-slate-300 mb-2 leading-relaxed">{challenge.prompt}</p>
-                        <p className="text-xs text-cyan-400/80 font-mono mb-4">💡 Hint: {challenge.hint}</p>
+                        <p className="text-xs text-cyan-400/80 font-mono mb-4 flex items-center gap-1"><Lightbulb className="w-4 h-4" /> Hint: {challenge.hint}</p>
 
                         {showAnswer && challenge.answer && (
                           <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
@@ -362,7 +363,7 @@ export default function ChatPage() {
                   </form>
                 ) : (
                   <div className="text-violet-300 font-mono glass-card p-4 sm:p-6 text-sm text-center max-w-md z-10 mx-2">
-                    <p className="mb-2">✓ Push successful</p>
+                    <p className="mb-2 flex items-center justify-center gap-1"><Check className="w-4 h-4" /> Push successful</p>
                     <p className="text-slate-400 text-xs">Waiting for {activeChat.name} to submit their solution...</p>
                   </div>
                 )}
@@ -372,7 +373,7 @@ export default function ChatPage() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-transparent text-[#8B949E] font-mono p-6 text-center relative">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-none"></div>
-            <div className="text-5xl sm:text-6xl mb-4 text-glow z-10">🐱‍💻</div>
+            <div className="text-5xl sm:text-6xl mb-4 text-glow z-10 text-[#8B949E] flex items-center justify-center"><Terminal className="w-16 h-16" /></div>
             <div className="text-sm sm:text-base z-10 text-white">No editor open</div>
             <div className="text-xs mt-2 opacity-50 max-w-xs">Select a connection from the Explorer to initiate pair programming</div>
             <button

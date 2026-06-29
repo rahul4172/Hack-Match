@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useNavigate } from 'react-router-dom';
+import { User, MapPin } from 'lucide-react';
 
 export default function ConnectionsPage() {
   const { user } = useAuth();
@@ -111,13 +112,13 @@ export default function ConnectionsPage() {
                 {nearby.map((dev, i) => (
                   <GlowCard key={dev.id} variant="green" delay={i * 0.06}>
                     <div className="p-5 flex flex-col items-center text-center h-full">
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full mb-3 border-2 border-[#3FB950]/40 overflow-hidden bg-[#161B22] flex items-center justify-center text-2xl">
-                        {dev.avatar ? <img src={dev.avatar} alt={dev.name} className="w-full h-full object-cover" /> : '👤'}
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full mb-3 border-2 border-[#3FB950]/40 overflow-hidden bg-[#161B22] flex items-center justify-center text-[#58A6FF]">
+                        {dev.avatar ? <img src={dev.avatar} alt={dev.name} className="w-full h-full object-cover" /> : <User className="w-8 h-8" />}
                       </div>
                       <h4 className="font-bold text-white mb-1">{dev.name}</h4>
                       <p className="text-xs text-[#3FB950] font-mono mb-2">{dev.role}</p>
                       <p className="text-xs text-[#8B949E] mb-3 line-clamp-2 flex-1">{dev.bio}</p>
-                      <div className="text-[10px] text-[#8B949E] font-mono bg-black/40 px-2 py-1 rounded-lg mb-4 w-full truncate">📍 {dev.location}</div>
+                      <div className="text-[10px] text-[#8B949E] font-mono bg-black/40 px-2 py-1 rounded-lg mb-4 w-full truncate flex items-center gap-1"><MapPin className="w-3 h-3" /> {dev.location}</div>
                       <Button variant="primary" className="w-full text-sm mt-auto" onClick={async () => {
                         try {
                           await fetchAPI('/connections/request', { method: 'POST', body: JSON.stringify({ receiverId: dev.id }) });

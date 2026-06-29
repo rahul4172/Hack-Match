@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView, useSpring } from 'framer-motion';
-import { Search, Radar, MessageSquare, Sparkles, Shield, CheckCircle2, Star, Cpu, ArrowRight, Code2 } from 'lucide-react';
+import { Search, Radar, MessageSquare, Sparkles, Shield, CheckCircle2, Star, Cpu, ArrowRight, Code2, X, Heart } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../store/useAuth';
 import { useMousePosition } from '../hooks/useMousePosition';
@@ -274,9 +274,9 @@ export default function LandingPage() {
                      <span className="px-3 py-1 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] text-xs font-mono">React</span>
                      <span className="px-3 py-1 rounded-full bg-[#06B6D4]/20 text-[#06B6D4] text-xs font-mono">PostgreSQL</span>
                    </div>
-                   <div className="mt-auto flex justify-center gap-6">
-                      <div className="w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center text-red-500/50">✕</div>
-                      <div className="w-14 h-14 rounded-full border-2 border-[#10B981]/50 flex items-center justify-center text-[#10B981]/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]">❤️</div>
+                    <div className="mt-auto flex justify-center gap-6">
+                      <div className="w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center text-red-500/50 hover:bg-red-500/10 transition-colors"><X className="w-6 h-6" /></div>
+                      <div className="w-14 h-14 rounded-full border-2 border-[#10B981]/50 flex items-center justify-center text-[#10B981]/50 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-[#10B981]/10 transition-colors"><Heart className="w-6 h-6 fill-[#10B981]/20" /></div>
                    </div>
                 </div>
              </div>

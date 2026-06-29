@@ -4,6 +4,7 @@ import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
+import { User, Trophy, Flame, Bug } from 'lucide-react';
 
 export default function ProfileEditPage() {
   const { user, updateProfile } = useAuth();
@@ -79,8 +80,8 @@ export default function ProfileEditPage() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#58A6FF]/10 blur-[50px] pointer-events-none" />
         
         <div className="flex-shrink-0 text-center relative">
-           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#3FB950] border-dashed flex items-center justify-center bg-[#0D1117] text-4xl mb-2 animate-[spin_10s_linear_infinite]">
-             <div className="animate-[spin_10s_linear_infinite_reverse]">😎</div>
+           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-[#3FB950] border-dashed flex items-center justify-center bg-[#0D1117] text-[#3FB950] mb-2 animate-[spin_10s_linear_infinite]">
+             <div className="animate-[spin_10s_linear_infinite_reverse] flex items-center justify-center w-full h-full"><User className="w-8 h-8" /></div>
            </div>
            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#3FB950] text-[#0D1117] font-bold text-xs px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap shadow-[0_0_15px_rgba(63,185,80,0.5)]">
              Level 42
@@ -105,15 +106,15 @@ export default function ProfileEditPage() {
             <h3 className="text-xs uppercase tracking-wider text-[#8B949E] mb-2 font-bold">Unlocked Badges</h3>
             <div className="flex flex-wrap gap-3">
               <div className="flex flex-col items-center group cursor-pointer">
-                <span className="text-2xl drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] transform group-hover:scale-125 transition-transform">🏆</span>
+                <span className="p-2 rounded-full bg-yellow-500/10 text-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] transform group-hover:scale-110 transition-transform"><Trophy className="w-5 h-5" /></span>
                 <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Hackathon Winner</span>
               </div>
               <div className="flex flex-col items-center group cursor-pointer">
-                <span className="text-2xl drop-shadow-[0_0_15px_rgba(88,166,255,0.8)] transform group-hover:scale-125 transition-transform">🔥</span>
+                <span className="p-2 rounded-full bg-[#58A6FF]/10 text-[#58A6FF] drop-shadow-[0_0_15px_rgba(88,166,255,0.8)] transform group-hover:scale-110 transition-transform"><Flame className="w-5 h-5" /></span>
                 <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">7 Day Streak</span>
               </div>
               <div className="flex flex-col items-center group cursor-pointer">
-                <span className="text-2xl drop-shadow-[0_0_15px_rgba(63,185,80,0.8)] transform group-hover:scale-125 transition-transform">🐛</span>
+                <span className="p-2 rounded-full bg-[#3FB950]/10 text-[#3FB950] drop-shadow-[0_0_15px_rgba(63,185,80,0.8)] transform group-hover:scale-110 transition-transform"><Bug className="w-5 h-5" /></span>
                 <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Bug Hunter</span>
               </div>
             </div>

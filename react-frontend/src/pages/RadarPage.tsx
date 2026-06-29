@@ -3,6 +3,7 @@ import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
+import { Calendar, DollarSign, Users } from 'lucide-react';
 
 export default function RadarPage() {
   const [hackathons, setHackathons] = useState<any[]>([]);
@@ -59,10 +60,10 @@ export default function RadarPage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm font-mono text-[#58A6FF] mb-2">
-                      <span>📅 {h.date}</span>
-                      <span>💰 {h.prize_pool}</span>
-                      <span>👥 {h.team_size}</span>
+                    <div className="flex flex-col gap-2 text-xs sm:text-sm font-mono text-[#8B949E] mb-2">
+                      <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-[#58A6FF]" /> {h.date}</span>
+                      <span className="flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-[#3FB950]" /> {h.prize_pool}</span>
+                      <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-[#BC8CFF]" /> {h.team_size}</span>
                     </div>
                     <p className="text-xs sm:text-sm text-[#8B949E]">
                       Stack: <span className="text-white">{h.tech_stack_focus}</span>
