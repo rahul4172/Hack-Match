@@ -21,7 +21,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const requiredEnv = ['JWT_SECRET', 'CORS_ORIGIN', 'DATABASE_URL'];
+const requiredEnv = ['JWT_SECRET', 'DATABASE_URL'];
 requiredEnv.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(`Missing required environment variable: ${envVar}`);
