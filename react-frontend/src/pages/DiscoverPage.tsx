@@ -238,6 +238,13 @@ export default function DiscoverPage() {
     }
   };
 
+  const getHackScoreBadge = (score: number) => {
+    if (score >= 2000) return { label: 'Legendary', color: 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10' };
+    if (score >= 1000) return { label: 'Elite', color: 'text-purple-400 border-purple-400/50 bg-purple-400/10' };
+    if (score >= 500) return { label: 'Pro', color: 'text-blue-400 border-blue-400/50 bg-blue-400/10' };
+    return { label: 'Spark', color: 'text-gray-400 border-gray-400/50 bg-gray-400/10' };
+  };
+
   const handleConnect = async (receiverId: string) => {
     try {
       await fetchAPI('/connections/request', {
