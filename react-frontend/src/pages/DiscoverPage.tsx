@@ -326,6 +326,11 @@ export default function DiscoverPage() {
                 );
               })}
             </div>
+            
+            <div className="text-slate-500 text-xs font-medium flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-white/5 rounded-full border border-white/5 shadow-inner">
+              <span className="hidden md:inline">💻 Desktop: Use Arrow Keys or Drag</span>
+              <span className="md:hidden">📱 Mobile: Swipe Left/Right</span>
+            </div>
           </div>
         ) : (
           <motion.div 
