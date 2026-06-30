@@ -17,8 +17,15 @@ export default API;
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   try {
     const method = (options.method || 'GET').toUpperCase();
+    
+    let finalUrl = endpoint;
+    if (method === 'GET') {
+      const separator = finalUrl.includes('?') ? '&' : '?';
+      finalUrl = `${finalUrl}${separator}t=${Date.now()}`;
+    }
+
     const res = await API({
-      url: endpoint,
+      url: finalUrl,
       method,
       data: options.body ? (typeof options.body === 'string' ? JSON.parse(options.body) : options.body) : undefined,
       headers: options.headers as any
