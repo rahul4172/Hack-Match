@@ -44,6 +44,7 @@ requiredEnv.forEach((envVar) => {
 });
 
 const app = express();
+app.set('trust proxy', 1); // Trust the reverse proxy (e.g. Render/Vercel) to properly identify IPs for rate limiting
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
