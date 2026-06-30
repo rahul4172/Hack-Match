@@ -46,9 +46,24 @@ export default function ChatPage() {
   useEffect(() => {
     if (!activeChat || !activeChat.public_key) return;
     
+    const getPrivKey = () => {
+      if (!user) return null;
+      const privKeyPem = localStorage.getItem(`private_key_${user.id}`);
+      if (!privKeyPem) {
+        // Fallback for existing users
+        const oldKey = localStorage.getItem('private_key');
+        if (oldKey) {
+          localStorage.setItem(`private_key_${user.id}`, oldKey);
+          return oldKey;
+        }
+        return null;
+      }
+      return privKeyPem;
+    };
+    
     const deriveKey = async () => {
       try {
-        const privKeyPem = localStorage.getItem('private_key');
+        const privKeyPem = getPrivKey();
         if (!privKeyPem) return;
         
         const privKey = await importPrivateKey(privKeyPem);

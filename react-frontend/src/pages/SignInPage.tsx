@@ -32,7 +32,7 @@ export default function SignInPage() {
         const pubKey = await exportPublicKey(keyPair.publicKey);
         const privKey = await exportPrivateKey(keyPair.privateKey);
         await fetchAPI('/users/profile', { method: 'PUT', body: JSON.stringify({ public_key: pubKey }) });
-        localStorage.setItem('private_key', privKey);
+        localStorage.setItem(`private_key_${res.user.id}`, privKey);
       }
 
       signIn(res.token, res.user);

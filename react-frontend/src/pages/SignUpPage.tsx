@@ -101,8 +101,9 @@ export default function SignUpPage() {
         method: 'POST',
         body: JSON.stringify({ email, password, name, public_key: pubKey, lat, lng, location, avatar: avatarUrl }),
       });
+      await fetchAPI('/users/profile', { method: 'PUT', body: JSON.stringify({ public_key: pubKey }) });
+      localStorage.setItem(`private_key_${res.user.id}`, privKey);
       localStorage.setItem('token', res.token);
-      localStorage.setItem('private_key', privKey);
       signIn(res.token, res.user);
       navigate('/onboarding');
     } catch (err: unknown) {
