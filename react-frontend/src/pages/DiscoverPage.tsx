@@ -61,7 +61,8 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge, currentUserLocatio
   try { skills = JSON.parse(u.skills || '[]'); } catch (e) {}
 
   const badge = !isIdea ? getHackScoreBadge(u.hack_score || 0) : null;
-  const isNearYou = currentUserLocation && u.location && (
+  const distance = u.distance_km;
+  const isNearYouTextMatch = !distance && currentUserLocation && u.location && (
     u.location.toLowerCase().includes(currentUserLocation.toLowerCase()) || 
     currentUserLocation.toLowerCase().includes(u.location.toLowerCase())
   );
@@ -122,9 +123,11 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge, currentUserLocatio
               {badge && (
                 <span className={`text-[10px] px-2 py-1 rounded-full border font-mono font-bold ${badge.color}`}>{badge.label}</span>
               )}
-              {isNearYou && (
+              {distance !== undefined && distance !== null ? (
+                <span className="text-[10px] px-2 py-1 rounded-full border font-mono font-bold text-red-400 border-red-400/50 bg-red-400/10 flex items-center gap-1">📍 {distance} km away</span>
+              ) : isNearYouTextMatch ? (
                 <span className="text-[10px] px-2 py-1 rounded-full border font-mono font-bold text-red-400 border-red-400/50 bg-red-400/10 flex items-center gap-1">📍 Near You</span>
-              )}
+              ) : null}
             </h2>
             <p className="text-sm font-mono text-[#58A6FF] drop-shadow-md">
               {isIdea ? `By ${u.creator_name}` : u.role}

@@ -15,6 +15,9 @@ export interface UserProfile {
   avatar?: string;
   public_key?: string;
   location?: string;
+  lat?: number;
+  lng?: number;
+  distance_km?: number;
   synergy_score?: number;
 }
 

@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String },
   public_key: { type: String },
   location: { type: String },
+  lat: { type: Number },
+  lng: { type: Number },
   hack_score: { type: Number, default: 0 },
 }, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 

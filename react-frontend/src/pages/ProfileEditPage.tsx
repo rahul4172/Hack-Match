@@ -4,7 +4,7 @@ import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
-import { User, Trophy, Flame, Bug } from 'lucide-react';
+import { User, Trophy, Flame, Bug, MapPin } from 'lucide-react';
 
 export default function ProfileEditPage() {
   const { user, updateProfile } = useAuth();
@@ -18,7 +18,9 @@ export default function ProfileEditPage() {
     github: '',
     linkedin: '',
     skills: '',
-    location: ''
+    location: '',
+    lat: 0,
+    lng: 0
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -40,13 +42,45 @@ export default function ProfileEditPage() {
         github: user.github || '',
         linkedin: user.linkedin || '',
         skills: parsedSkills,
-        location: user.location || ''
+        location: user.location || '',
+        lat: user.lat || 0,
+        lng: user.lng || 0
       });
     }
   }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleAutoDetect = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
+      return;
+    }
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      setFormData(prev => ({ ...prev, lat, lng }));
+      
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+        const data = await res.json();
+        const city = data.address.city || data.address.town || data.address.village;
+        const state = data.address.state;
+        if (city && state) {
+          setFormData(prev => ({ ...prev, location: `${city}, ${state}` }));
+        }
+      } catch (e) {
+        console.error("Reverse geocoding failed", e);
+      } finally {
+        setLoading(false);
+      }
+    }, () => {
+      alert('Unable to retrieve your location');
+      setLoading(false);
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -141,7 +175,12 @@ export default function ProfileEditPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Location (City, State)</label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-sm text-gray-400">Location (City, State)</label>
+            <button type="button" onClick={handleAutoDetect} className="text-xs text-[#58A6FF] hover:text-[#58A6FF]/80 flex items-center gap-1">
+              <MapPin className="w-3 h-3" /> Auto-Detect
+            </button>
+          </div>
           <input name="location" value={formData.location} onChange={handleChange} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none text-sm" placeholder="e.g. San Francisco, CA" />
         </div>
 

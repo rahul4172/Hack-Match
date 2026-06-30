@@ -113,7 +113,18 @@ async function calculateHackScore(userId) {
   return score;
 }
 
-function calculateSynergy(u1, u2) {
+function getDistanceInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180; 
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c; 
+}
+
+function calculateSynergy(u1, u2, distance_km) {
   let score = 50;
   const r1 = (u1.role || '').toLowerCase();
   const r2 = (u2.role || '').toLowerCase();
@@ -126,7 +137,10 @@ function calculateSynergy(u1, u2) {
   try { s2 = JSON.parse(u2.skills || '[]'); } catch { /* ignore */ }
   score += s1.filter(sk => s2.includes(sk)).length * 5;
 
-  if (u1.location && u2.location && u1.location.trim() !== '') {
+  if (distance_km !== null && distance_km !== undefined) {
+    if (distance_km <= 25) score += 50;
+    else if (distance_km <= 80) score += 25;
+  } else if (u1.location && u2.location && u1.location.trim() !== '') {
     const loc1 = u1.location.toLowerCase();
     const loc2 = u2.location.toLowerCase();
     if (loc1.includes(loc2) || loc2.includes(loc1)) score += 50;
@@ -265,7 +279,12 @@ app.get('/users', authenticate, async (req, res) => {
       const score = await calculateHackScore(u._id);
       const uObj = u.toJSON();
       uObj.hack_score = score;
-      uObj.synergy_score = calculateSynergy(currentUser, uObj);
+      let dist = null;
+      if (currentUser.lat && currentUser.lng && uObj.lat && uObj.lng) {
+        dist = getDistanceInKm(currentUser.lat, currentUser.lng, uObj.lat, uObj.lng);
+        uObj.distance_km = Math.round(dist);
+      }
+      uObj.synergy_score = calculateSynergy(currentUser, uObj, dist);
       uObj.type = 'person';
       delete uObj.password;
       withSynergy.push(uObj);
@@ -316,7 +335,7 @@ app.get('/users', authenticate, async (req, res) => {
 });
 
 app.put('/users/profile', authenticate, async (req, res) => {
-  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, public_key } = req.body;
+  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, lat, lng, public_key } = req.body;
   try {
     const existing = await User.findById(req.user.id);
     if (!existing) return res.status(404).json({ error: 'User not found' });
@@ -326,11 +345,13 @@ app.put('/users/profile', authenticate, async (req, res) => {
     existing.skills = skills ?? existing.skills;
     existing.winnings = winnings ?? existing.winnings;
     existing.learnings = learnings ?? existing.learnings;
-    existing.github = github ?? existing.github;
-    existing.linkedin = linkedin ?? existing.linkedin;
-    existing.role = role ?? existing.role;
-    existing.location = location ?? existing.location;
-    if (public_key !== undefined) existing.public_key = public_key;
+      if (github !== undefined) existing.github = github;
+      if (linkedin !== undefined) existing.linkedin = linkedin;
+      if (role !== undefined) existing.role = role;
+      if (location !== undefined) existing.location = location;
+      if (lat !== undefined) existing.lat = lat;
+      if (lng !== undefined) existing.lng = lng;
+      if (public_key !== undefined) existing.public_key = public_key;
 
     await existing.save();
 
