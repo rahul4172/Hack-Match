@@ -55,10 +55,11 @@ export default function ConnectionsPage() {
   const handleCreateSquad = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetchAPI('/squads', { method: 'POST', body: JSON.stringify(createData) });
+      const response = await fetchAPI('/squads', { method: 'POST', body: JSON.stringify(createData) });
       setShowCreateModal(false);
       setCreateData({ name: '', hackathon_name: '' });
       loadConnections();
+      alert(`🎉 Squad "${response.name}" created successfully!\n\nYour Join Code is: ${response.join_code}\n\nShare this code with your friends so they can join!`);
     } catch (err) {
       console.error(err);
       alert('Failed to create squad');
