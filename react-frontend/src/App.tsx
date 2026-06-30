@@ -58,9 +58,7 @@ function NavBar() {
         } px-4 md:px-8 py-4 flex justify-between items-center`}
       >
         <Link to="/discover" className="flex items-center gap-2 z-50">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8B5CF6] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#8B5CF6]/20">
-            <span className="text-white font-bold font-display text-sm tracking-tighter">HM</span>
-          </div>
+          <img src="/logo.png" alt="HackMatch Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-[#8B5CF6]/20 object-contain" />
           <span className="text-white font-display font-bold text-lg tracking-tight hidden sm:block">
             HackMatch
           </span>
