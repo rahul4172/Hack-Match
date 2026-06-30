@@ -294,7 +294,7 @@ app.get('/users', authenticate, async (req, res) => {
 
     withSynergy.sort((a, b) => b.synergy_score - a.synergy_score);
 
-    const ideaQuery: any = { creator_id: { $ne: req.user.id }, status: 'active' };
+    const ideaQuery = { creator_id: { $ne: req.user.id }, status: 'active' };
     if (search) {
       ideaQuery.$or = [
         { title: { $regex: search, $options: 'i' } },
