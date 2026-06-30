@@ -724,8 +724,10 @@ app.post('/squads/join', authenticate, async (req, res) => {
     if (!squad.members.includes(req.user.id)) {
       squad.members.push(req.user.id);
       await squad.save();
+      res.json(squad.toJSON());
+    } else {
+      res.status(400).json({ error: 'You are already a member of this squad' });
     }
-    res.json(squad.toJSON());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

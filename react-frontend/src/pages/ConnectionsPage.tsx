@@ -22,9 +22,11 @@ export default function ConnectionsPage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [createData, setCreateData] = useState({ name: '', hackathon_name: '' });
   const [joinCode, setJoinCode] = useState('');
+  const [createdSquad, setCreatedSquad] = useState<any>(null);
 
   const loadConnections = async () => {
     try {
+      setLoading(true);
       const data = await fetchAPI('/connections');
       setPending(data.pending);
       setAccepted(data.accepted);
@@ -56,10 +58,9 @@ export default function ConnectionsPage() {
     e.preventDefault();
     try {
       const response = await fetchAPI('/squads', { method: 'POST', body: JSON.stringify(createData) });
-      setShowCreateModal(false);
+      setCreatedSquad(response);
       setCreateData({ name: '', hackathon_name: '' });
       loadConnections();
-      alert(`🎉 Squad "${response.name}" created successfully!\n\nYour Join Code is: ${response.join_code}\n\nShare this code with your friends so they can join!`);
     } catch (err) {
       console.error(err);
       alert('Failed to create squad');
@@ -249,21 +250,44 @@ export default function ConnectionsPage() {
         {showCreateModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="glass p-6 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl relative overflow-hidden">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-white">Create Squad</h2>
-                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
-              </div>
-              <form className="space-y-4" onSubmit={handleCreateSquad}>
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">Squad Name</label>
-                  <input required type="text" value={createData.name} onChange={e => setCreateData({...createData, name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="e.g. The Try Catchers" />
+              {createdSquad ? (
+                <div className="text-center">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-white">Squad Created! 🎉</h2>
+                    <button onClick={() => { setShowCreateModal(false); setCreatedSquad(null); }} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+                  </div>
+                  <p className="text-sm text-[var(--text-secondary)] mb-6">Share this code with your teammates to let them join <strong className="text-white">{createdSquad.name}</strong>.</p>
+                  
+                  <div className="bg-[#0D1117] border border-white/10 rounded-lg p-6 mb-6">
+                    <span className="text-4xl font-mono font-bold tracking-widest text-[#58A6FF]">{createdSquad.join_code}</span>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button variant="outline" className="w-full" onClick={() => { setShowCreateModal(false); setCreatedSquad(null); }}>Close</Button>
+                    <Button variant="primary" className="w-full flex items-center justify-center gap-2" onClick={() => copyToClipboard(createdSquad.join_code)}>
+                      <Copy className="w-4 h-4" /> Copy Code
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-mono text-slate-400 mb-1">Target Hackathon</label>
-                  <input required type="text" value={createData.hackathon_name} onChange={e => setCreateData({...createData, hackathon_name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="e.g. ISRO Hackathon" />
-                </div>
-                <Button variant="primary" type="submit" className="w-full mt-4" disabled={!createData.name || !createData.hackathon_name}>Create & Get Code</Button>
-              </form>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-white">Create Squad</h2>
+                    <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+                  </div>
+                  <form className="space-y-4" onSubmit={handleCreateSquad}>
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Squad Name</label>
+                      <input required type="text" value={createData.name} onChange={e => setCreateData({...createData, name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#58A6FF]" placeholder="e.g. The Try Catchers" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono text-slate-400 mb-1">Target Hackathon</label>
+                      <input required type="text" value={createData.hackathon_name} onChange={e => setCreateData({...createData, hackathon_name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#58A6FF]" placeholder="e.g. ISRO Hackathon" />
+                    </div>
+                    <Button variant="primary" type="submit" className="w-full mt-4" disabled={!createData.name || !createData.hackathon_name}>Create & Get Code</Button>
+                  </form>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
