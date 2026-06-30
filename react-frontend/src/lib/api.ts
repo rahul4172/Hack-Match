@@ -25,6 +25,10 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     });
     return res.data;
   } catch (error: any) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     throw new Error(error.response?.data?.error || `Request failed with status ${error.response?.status}`);
   }
 }

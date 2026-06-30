@@ -77,6 +77,9 @@ function authenticate(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      return res.status(401).json({ error: 'Session expired (migrated to MongoDB). Please log out and log in again.' });
+    }
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });
