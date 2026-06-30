@@ -1,26 +1,38 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import db, { initDB } from './db.js';
+import mongoose from 'mongoose';
+import { initDB } from './db.js';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+
+import User from './models/User.js';
+import Project from './models/Project.js';
+import Connection from './models/Connection.js';
+import Message from './models/Message.js';
+import TeamSignal from './models/TeamSignal.js';
+import Idea from './models/Idea.js';
+import Hackathon from './models/Hackathon.js';
+import UserHackathon from './models/UserHackathon.js';
+import StackClash from './models/StackClash.js';
+import Reputation from './models/Reputation.js';
+import Debrief from './models/Debrief.js';
 
 await initDB();
-console.log('Seeding Supabase database with ultra-realistic data...');
+console.log('Seeding MongoDB database with ultra-realistic data...');
 
-await db.exec('DELETE FROM messages');
-await db.exec('DELETE FROM stack_clashes');
-await db.exec('DELETE FROM connections');
-await db.exec('DELETE FROM projects');
-await db.exec('DELETE FROM team_signals');
-await db.exec('DELETE FROM ideas');
-await db.exec('DELETE FROM user_hackathons');
-await db.exec('DELETE FROM debriefs');
-await db.exec('DELETE FROM reputation');
-await db.exec('DELETE FROM users');
-await db.exec('DELETE FROM hackathons');
+await Message.deleteMany({});
+await StackClash.deleteMany({});
+await Connection.deleteMany({});
+await Project.deleteMany({});
+await TeamSignal.deleteMany({});
+await Idea.deleteMany({});
+await UserHackathon.deleteMany({});
+await Debrief.deleteMany({});
+await Reputation.deleteMany({});
+await User.deleteMany({});
+await Hackathon.deleteMany({});
 
-const users = [
+const usersData = [
   { 
     email: 'alex@example.com', password: 'password123', name: 'Alex Rivera', role: 'Full Stack Engineer', 
     bio: 'Obsessed with performance and beautiful UIs. Shipped 3 products to ProductHunt top 10. Building highly scalable systems in Next.js and Rust.', 
@@ -93,46 +105,49 @@ const users = [
   }
 ];
 
-for (const u of users) {
-  u.id = crypto.randomUUID();
+const createdUsers = [];
+for (const u of usersData) {
+  const hash = bcrypt.hashSync(u.password, 10);
+  const doc = await User.create({
+    email: u.email,
+    password: hash,
+    name: u.name,
+    role: u.role,
+    bio: u.bio,
+    skills: u.skills,
+    winnings: u.winnings,
+    learnings: u.learnings,
+    github: u.github,
+    linkedin: u.linkedin,
+    avatar: u.avatar,
+    hack_score: u.hack_score,
+  });
+  createdUsers.push(doc);
 }
 
-const hackathons = [
-  { id: crypto.randomUUID(), name: 'ETHGlobal San Francisco', date: 'Nov 03 - Nov 05, 2026', prize_pool: '$250,000', tech_stack_focus: 'Solidity, ZK, Web3, React', team_size: '2-5', platform: 'Devfolio', registration_url: 'https://devfolio.co/ethglobal-sf' },
-  { id: crypto.randomUUID(), name: 'GenAI Buildathon', date: 'Sep 20 - Sep 22, 2026', prize_pool: '$100,000', tech_stack_focus: 'OpenAI, LangChain, Python, Next.js', team_size: '1-4', platform: 'Unstop', registration_url: 'https://unstop.com/genai-buildathon' },
-  { id: crypto.randomUUID(), name: 'Global Hack Week: Cloud', date: 'Oct 10 - Oct 17, 2026', prize_pool: 'Swag & Credits', tech_stack_focus: 'AWS, GCP, Azure, Docker', team_size: '1-4', platform: 'Major League Hacking', registration_url: 'https://mlh.io' },
-  { id: crypto.randomUUID(), name: 'Solana Crossroads Hackathon', date: 'Dec 01 - Dec 15, 2026', prize_pool: '$1,000,000', tech_stack_focus: 'Rust, Solana, TypeScript', team_size: '3-5', platform: 'Devfolio', registration_url: 'https://devfolio.co/solana-crossroads' }
+const hackathonsData = [
+  { name: 'ETHGlobal San Francisco', date: 'Nov 03 - Nov 05, 2026', prize_pool: '$250,000', tech_stack_focus: 'Solidity, ZK, Web3, React', team_size: '2-5', platform: 'Devfolio', registration_url: 'https://devfolio.co/ethglobal-sf' },
+  { name: 'GenAI Buildathon', date: 'Sep 20 - Sep 22, 2026', prize_pool: '$100,000', tech_stack_focus: 'OpenAI, LangChain, Python, Next.js', team_size: '1-4', platform: 'Unstop', registration_url: 'https://unstop.com/genai-buildathon' },
+  { name: 'Global Hack Week: Cloud', date: 'Oct 10 - Oct 17, 2026', prize_pool: 'Swag & Credits', tech_stack_focus: 'AWS, GCP, Azure, Docker', team_size: '1-4', platform: 'Major League Hacking', registration_url: 'https://mlh.io' },
+  { name: 'Solana Crossroads Hackathon', date: 'Dec 01 - Dec 15, 2026', prize_pool: '$1,000,000', tech_stack_focus: 'Rust, Solana, TypeScript', team_size: '3-5', platform: 'Devfolio', registration_url: 'https://devfolio.co/solana-crossroads' }
 ];
 
-for (const h of hackathons) {
-  await db.prepare('INSERT INTO hackathons (id, name, date, prize_pool, tech_stack_focus, team_size, platform, registration_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(h.id, h.name, h.date, h.prize_pool, h.tech_stack_focus, h.team_size, h.platform, h.registration_url);
-}
+await Hackathon.insertMany(hackathonsData);
 
-for (const u of users) {
-  await db.prepare('INSERT INTO users (id, email, password, name, role, bio, skills, winnings, learnings, github, linkedin, avatar, hack_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .run(u.id, u.email, bcrypt.hashSync(u.password, 10), u.name, u.role, u.bio, u.skills, u.winnings, u.learnings, u.github, u.linkedin, u.avatar || null, u.hack_score || 0);
-}
-
-// Add some Project Ideas
-const ideas = [
-  { id: crypto.randomUUID(), creator_id: users[1].id, title: 'Local AI Code Reviewer', pitch: 'A CLI tool that uses local open-source LLMs to review PRs without sending code to the cloud.', roles_needed: 'Rust, Systems Programmer' },
-  { id: crypto.randomUUID(), creator_id: users[4].id, title: 'Zero-Knowledge DAO Voting', pitch: 'A governance platform where votes are verified on-chain without revealing the voter\'s wallet address using ZK-SNARKs.', roles_needed: 'Frontend Dev, Cryptographer' },
-  { id: crypto.randomUUID(), creator_id: users[3].id, title: 'Glassmorphism Component Library', pitch: 'A premium React component library focusing entirely on highly animated glassmorphic UIs.', roles_needed: 'React Dev, Accessibility Expert' }
+const ideasData = [
+  { creator_id: createdUsers[1]._id, title: 'Local AI Code Reviewer', pitch: 'A CLI tool that uses local open-source LLMs to review PRs without sending code to the cloud.', roles_needed: 'Rust, Systems Programmer' },
+  { creator_id: createdUsers[4]._id, title: 'Zero-Knowledge DAO Voting', pitch: 'A governance platform where votes are verified on-chain without revealing the voter\'s wallet address using ZK-SNARKs.', roles_needed: 'Frontend Dev, Cryptographer' },
+  { creator_id: createdUsers[3]._id, title: 'Glassmorphism Component Library', pitch: 'A premium React component library focusing entirely on highly animated glassmorphic UIs.', roles_needed: 'React Dev, Accessibility Expert' }
 ];
 
-for (const idea of ideas) {
-  await db.prepare('INSERT INTO ideas (id, creator_id, title, pitch, roles_needed) VALUES (?, ?, ?, ?, ?)').run(idea.id, idea.creator_id, idea.title, idea.pitch, idea.roles_needed);
-}
+await Idea.insertMany(ideasData);
 
-// Add some Active Signals
-const signals = [
-  { id: crypto.randomUUID(), user_id: users[2].id, message: 'Need a frontend wizard for a GenAI hackathon this weekend! Backend is mostly done.', role_needed: 'Frontend', created_at: new Date().toISOString() },
-  { id: crypto.randomUUID(), user_id: users[7].id, message: 'Looking for someone who knows Firebase rules inside out for a quick collab.', role_needed: 'Backend', created_at: new Date().toISOString() }
+const signalsData = [
+  { user_id: createdUsers[2]._id, message: 'Need a frontend wizard for a GenAI hackathon this weekend! Backend is mostly done.', role_needed: 'Frontend', expires_at: new Date(Date.now() + 86400000) },
+  { user_id: createdUsers[7]._id, message: 'Looking for someone who knows Firebase rules inside out for a quick collab.', role_needed: 'Backend', expires_at: new Date(Date.now() + 86400000) }
 ];
 
-for (const sig of signals) {
-  await db.prepare('INSERT INTO team_signals (id, user_id, message, role_needed, created_at) VALUES (?, ?, ?, ?, ?)').run(sig.id, sig.user_id, sig.message, sig.role_needed, sig.created_at);
-}
+await TeamSignal.insertMany(signalsData);
 
 console.log('Seeding complete! High-fidelity data injected.');
 process.exit(0);

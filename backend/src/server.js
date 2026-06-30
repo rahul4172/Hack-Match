@@ -7,11 +7,25 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import db, { initDB } from './db.js';
 import crypto from 'crypto';
 import * as cheerio from 'cheerio';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
+
+import { initDB } from './db.js';
+import User from './models/User.js';
+import Project from './models/Project.js';
+import Connection from './models/Connection.js';
+import Message from './models/Message.js';
+import TeamSignal from './models/TeamSignal.js';
+import Idea from './models/Idea.js';
+import Hackathon from './models/Hackathon.js';
+import UserHackathon from './models/UserHackathon.js';
+import StackClash from './models/StackClash.js';
+import Reputation from './models/Reputation.js';
+import Debrief from './models/Debrief.js';
+
 import {
   pickChallenge,
   validateSubmission,
@@ -21,7 +35,7 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const requiredEnv = ['JWT_SECRET', 'DATABASE_URL'];
+const requiredEnv = ['JWT_SECRET', 'MONGODB_URI'];
 requiredEnv.forEach((envVar) => {
   if (!process.env[envVar]) {
     throw new Error(`Missing required environment variable: ${envVar}`);
@@ -34,7 +48,7 @@ app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', env: process.env.NODE_ENV, db: 'supabase-postgres', timestamp: Date.now() });
+  res.json({ status: 'ok', env: process.env.NODE_ENV, db: 'mongodb', timestamp: Date.now() });
 });
 
 const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 200 });
@@ -69,17 +83,20 @@ function authenticate(req, res, next) {
 
 async function calculateHackScore(userId) {
   let score = 0;
-  const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const user = await User.findById(userId);
   if (!user) return 0;
   if (user.winnings && user.winnings.length > 5) score += 50;
   if (user.learnings && user.learnings.length > 5) score += 50;
   if (user.github && user.github.length > 2) score += 50;
   if (user.linkedin && user.linkedin.length > 2) score += 50;
 
-  const row = await db.prepare('SELECT count(*) as count FROM connections WHERE (sender_id = ? OR receiver_id = ?) AND status = ?').get(userId, userId, 'accepted');
-  score += Number(row?.count || 0) * 20;
+  const count = await Connection.countDocuments({
+    $or: [{ sender_id: userId }, { receiver_id: userId }],
+    status: 'accepted'
+  });
+  score += count * 20;
 
-  await db.prepare('UPDATE users SET hack_score = ? WHERE id = ?').run(score, userId);
+  await User.findByIdAndUpdate(userId, { hack_score: score });
   return score;
 }
 
@@ -103,16 +120,16 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
   const { email, password, name, public_key } = req.body;
   if (!email || !password || !name) return res.status(400).json({ error: 'Email, password, and name are required' });
   try {
-    const existing = await db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ error: 'Email already exists' });
 
-    const id = crypto.randomUUID();
     const hash = bcrypt.hashSync(password, 10);
-    await db.prepare(`INSERT INTO users (id, email, password, name, bio, skills, role, public_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(id, email, hash, name, 'Ready to build something awesome.', '[]', 'Developer', public_key || null);
+    const user = await User.create({
+      email, password: hash, name, bio: 'Ready to build something awesome.', skills: '[]', role: 'Developer', public_key: public_key || null
+    });
 
-    const token = jwt.sign({ id, email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id, email, name } });
+    const token = jwt.sign({ id: user._id, email }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user._id, email, name } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -121,13 +138,14 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
 app.post('/auth/signin', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    delete user.password;
-    res.json({ token, user });
+    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    const userObj = user.toJSON();
+    delete userObj.password;
+    res.json({ token, user: userObj });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -135,14 +153,15 @@ app.post('/auth/signin', authLimiter, async (req, res) => {
 
 app.post('/auth/guest', authLimiter, async (req, res) => {
   try {
-    const id = crypto.randomUUID();
-    const guestEmail = `guest_${id.substring(0, 8)}@temp.com`;
+    const idStr = crypto.randomUUID().substring(0, 8);
+    const guestEmail = `guest_${idStr}@temp.com`;
     const hash = bcrypt.hashSync(crypto.randomUUID(), 10);
-    await db.prepare(`INSERT INTO users (id, email, password, name, bio, skills, role) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-      .run(id, guestEmail, hash, 'Guest User', 'Testing out the platform for 10 minutes.', '["React", "Node"]', 'Guest Explorer');
+    const user = await User.create({
+      email: guestEmail, password: hash, name: 'Guest User', bio: 'Testing out the platform for 10 minutes.', skills: '["React", "Node"]', role: 'Guest Explorer'
+    });
 
-    const token = jwt.sign({ id, email: guestEmail, is_guest: true }, JWT_SECRET, { expiresIn: '10m' });
-    res.json({ token, user: { id, email: guestEmail, name: 'Guest User', role: 'Guest Explorer', is_guest: true } });
+    const token = jwt.sign({ id: user._id, email: guestEmail, is_guest: true }, JWT_SECRET, { expiresIn: '10m' });
+    res.json({ token, user: { id: user._id, email: guestEmail, name: 'Guest User', role: 'Guest Explorer', is_guest: true } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -151,11 +170,11 @@ app.post('/auth/guest', authLimiter, async (req, res) => {
 app.post('/auth/logout', authenticate, async (req, res) => {
   try {
     if (req.user.is_guest) {
-      await db.prepare('DELETE FROM connections WHERE sender_id = ? OR receiver_id = ?').run(req.user.id, req.user.id);
-      await db.prepare('DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?').run(req.user.id, req.user.id);
-      await db.prepare('DELETE FROM team_signals WHERE user_id = ?').run(req.user.id);
-      await db.prepare('DELETE FROM ideas WHERE creator_id = ?').run(req.user.id);
-      await db.prepare('DELETE FROM users WHERE id = ?').run(req.user.id);
+      await Connection.deleteMany({ $or: [{ sender_id: req.user.id }, { receiver_id: req.user.id }] });
+      await Message.deleteMany({ $or: [{ sender_id: req.user.id }, { receiver_id: req.user.id }] });
+      await TeamSignal.deleteMany({ user_id: req.user.id });
+      await Idea.deleteMany({ creator_id: req.user.id });
+      await User.findByIdAndDelete(req.user.id);
     }
     res.json({ success: true });
   } catch (err) {
@@ -165,11 +184,12 @@ app.post('/auth/logout', authenticate, async (req, res) => {
 
 app.get('/auth/me', authenticate, async (req, res) => {
   try {
-    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    user.hack_score = await calculateHackScore(user.id);
-    delete user.password;
-    res.json(user);
+    const userObj = user.toJSON();
+    userObj.hack_score = await calculateHackScore(user._id);
+    delete userObj.password;
+    res.json(userObj);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -179,8 +199,8 @@ app.get('/auth/me', authenticate, async (req, res) => {
 app.get('/users', authenticate, async (req, res) => {
   try {
     const { roles, skills } = req.query;
-    const currentUser = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
-    let users = await db.prepare('SELECT id, name, role, bio, skills, winnings, learnings, github, linkedin, avatar, public_key, hack_score FROM users WHERE id != ?').all(req.user.id);
+    const currentUser = await User.findById(req.user.id);
+    let users = await User.find({ _id: { $ne: req.user.id } });
 
     // Apply filtering
     if (roles) {
@@ -198,28 +218,44 @@ app.get('/users', authenticate, async (req, res) => {
       });
     }
 
-    for (const u of users) u.hack_score = await calculateHackScore(u.id);
+    const withSynergy = [];
+    for (let u of users) {
+      const score = await calculateHackScore(u._id);
+      const uObj = u.toJSON();
+      uObj.hack_score = score;
+      uObj.synergy_score = calculateSynergy(currentUser, uObj);
+      uObj.type = 'person';
+      delete uObj.password;
+      withSynergy.push(uObj);
+    }
 
-    const withSynergy = users.map(u => ({ ...u, synergy_score: calculateSynergy(currentUser, u), type: 'person' }));
     withSynergy.sort((a, b) => b.synergy_score - a.synergy_score);
 
-    const ideas = await db.prepare(`
-      SELECT i.*, u.name as creator_name, u.avatar as creator_avatar, u.role as creator_role, u.hack_score as creator_hack_score
-      FROM ideas i JOIN users u ON i.creator_id = u.id
-      WHERE i.creator_id != ? AND i.status = 'active'
-    `).all(req.user.id);
+    const ideas = await Idea.find({ creator_id: { $ne: req.user.id }, status: 'active' }).populate('creator_id');
+    const formattedIdeas = ideas.map(i => {
+      const iObj = i.toJSON();
+      if (i.creator_id) {
+        iObj.creator_name = i.creator_id.name;
+        iObj.creator_avatar = i.creator_id.avatar;
+        iObj.creator_role = i.creator_id.role;
+        iObj.creator_hack_score = i.creator_id.hack_score;
+        iObj.creator_id = i.creator_id._id;
+      }
+      iObj.type = 'idea';
+      return iObj;
+    });
 
     const deck = [];
     let ideaIdx = 0;
     withSynergy.forEach((person, idx) => {
       deck.push(person);
-      if ((idx + 1) % 4 === 0 && ideaIdx < ideas.length) {
-        deck.push({ ...ideas[ideaIdx], type: 'idea' });
+      if ((idx + 1) % 4 === 0 && ideaIdx < formattedIdeas.length) {
+        deck.push(formattedIdeas[ideaIdx]);
         ideaIdx++;
       }
     });
-    while (ideaIdx < ideas.length) {
-      deck.push({ ...ideas[ideaIdx], type: 'idea' });
+    while (ideaIdx < formattedIdeas.length) {
+      deck.push(formattedIdeas[ideaIdx]);
       ideaIdx++;
     }
     res.json(deck);
@@ -231,28 +267,24 @@ app.get('/users', authenticate, async (req, res) => {
 app.put('/users/profile', authenticate, async (req, res) => {
   const { name, bio, skills, winnings, learnings, github, linkedin, role, public_key } = req.body;
   try {
-    const existing = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    const existing = await User.findById(req.user.id);
     if (!existing) return res.status(404).json({ error: 'User not found' });
 
-    await db.prepare(`
-      UPDATE users SET name = ?, bio = ?, skills = ?, winnings = ?, learnings = ?, github = ?, linkedin = ?, role = ?, public_key = COALESCE(?, public_key)
-      WHERE id = ?
-    `).run(
-      name ?? existing.name,
-      bio ?? existing.bio,
-      skills ?? existing.skills,
-      winnings ?? existing.winnings,
-      learnings ?? existing.learnings,
-      github ?? existing.github,
-      linkedin ?? existing.linkedin,
-      role ?? existing.role,
-      public_key ?? null,
-      req.user.id
-    );
+    existing.name = name ?? existing.name;
+    existing.bio = bio ?? existing.bio;
+    existing.skills = skills ?? existing.skills;
+    existing.winnings = winnings ?? existing.winnings;
+    existing.learnings = learnings ?? existing.learnings;
+    existing.github = github ?? existing.github;
+    existing.linkedin = linkedin ?? existing.linkedin;
+    existing.role = role ?? existing.role;
+    if (public_key !== undefined) existing.public_key = public_key;
 
-    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
-    delete user.password;
-    res.json(user);
+    await existing.save();
+
+    const userObj = existing.toJSON();
+    delete userObj.password;
+    res.json(userObj);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -260,10 +292,13 @@ app.put('/users/profile', authenticate, async (req, res) => {
 
 app.get('/users/:id', authenticate, async (req, res) => {
   try {
-    const user = await db.prepare('SELECT id, name, role, bio, skills, winnings, learnings, github, linkedin, avatar, public_key, hack_score FROM users WHERE id = ?').get(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Invalid user ID' });
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    user.hack_score = await calculateHackScore(user.id);
-    res.json(user);
+    const userObj = user.toJSON();
+    userObj.hack_score = await calculateHackScore(user._id);
+    delete userObj.password;
+    res.json(userObj);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -271,9 +306,9 @@ app.get('/users/:id', authenticate, async (req, res) => {
 
 app.get('/users/nearby', authenticate, (req, res) => {
   res.json([
-    { id: crypto.randomUUID(), name: 'Sarah Chen', role: 'Full Stack Engineer', bio: 'Building scalable web apps. Looking for a weekend hackathon team!', avatar: 'https://i.pravatar.cc/150?u=sarah', location: 'San Francisco, CA (2 miles away)', tech_stack: ['React', 'TypeScript', 'Node.js'] },
-    { id: crypto.randomUUID(), name: 'David Kumar', role: 'AI / ML Researcher', bio: "Training tiny LLMs on edge devices. Let's build the next AI agent.", avatar: 'https://i.pravatar.cc/150?u=david', location: 'San Francisco, CA (5 miles away)', tech_stack: ['Python', 'PyTorch', 'C++'] },
-    { id: crypto.randomUUID(), name: 'Elena Rodriguez', role: 'Product Designer', bio: 'UI/UX enthusiast. I make things look pretty and user-friendly.', avatar: 'https://i.pravatar.cc/150?u=elena', location: 'San Jose, CA (40 miles away)', tech_stack: ['Figma', 'Framer', 'CSS'] },
+    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Sarah Chen', role: 'Full Stack Engineer', bio: 'Building scalable web apps. Looking for a weekend hackathon team!', avatar: 'https://i.pravatar.cc/150?u=sarah', location: 'San Francisco, CA (2 miles away)', tech_stack: ['React', 'TypeScript', 'Node.js'] },
+    { id: new mongoose.Types.ObjectId().toHexString(), name: 'David Kumar', role: 'AI / ML Researcher', bio: "Training tiny LLMs on edge devices. Let's build the next AI agent.", avatar: 'https://i.pravatar.cc/150?u=david', location: 'San Francisco, CA (5 miles away)', tech_stack: ['Python', 'PyTorch', 'C++'] },
+    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Elena Rodriguez', role: 'Product Designer', bio: 'UI/UX enthusiast. I make things look pretty and user-friendly.', avatar: 'https://i.pravatar.cc/150?u=elena', location: 'San Jose, CA (40 miles away)', tech_stack: ['Figma', 'Framer', 'CSS'] },
   ]);
 });
 
@@ -282,9 +317,8 @@ app.post('/ideas', authenticate, async (req, res) => {
   const { title, pitch, roles_needed } = req.body;
   if (!title || !pitch || !roles_needed) return res.status(400).json({ error: 'title, pitch, and roles_needed required' });
   try {
-    const id = crypto.randomUUID();
-    await db.prepare('INSERT INTO ideas (id, creator_id, title, pitch, roles_needed) VALUES (?, ?, ?, ?, ?)').run(id, req.user.id, title, pitch, roles_needed);
-    res.json({ success: true, id });
+    const idea = await Idea.create({ creator_id: req.user.id, title, pitch, roles_needed });
+    res.json({ success: true, id: idea._id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -294,10 +328,9 @@ app.post('/signals', authenticate, async (req, res) => {
   const { message, role_needed } = req.body;
   if (!message || !role_needed) return res.status(400).json({ error: 'message and role_needed required' });
   try {
-    const id = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
-    await db.prepare('INSERT INTO team_signals (id, user_id, message, role_needed, expires_at) VALUES (?, ?, ?, ?, ?)').run(id, req.user.id, message, role_needed, expiresAt);
-    res.json({ id, message, role_needed, expires_at: expiresAt });
+    const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000);
+    const sig = await TeamSignal.create({ user_id: req.user.id, message, role_needed, expires_at: expiresAt });
+    res.json({ id: sig._id, message, role_needed, expires_at: expiresAt.toISOString() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -305,12 +338,19 @@ app.post('/signals', authenticate, async (req, res) => {
 
 app.get('/signals/active', authenticate, async (req, res) => {
   try {
-    const now = new Date().toISOString();
-    const signals = await db.prepare(`
-      SELECT s.*, u.name, u.avatar, u.role, u.hack_score FROM team_signals s
-      JOIN users u ON s.user_id = u.id WHERE s.expires_at > ? ORDER BY s.created_at DESC
-    `).all(now);
-    res.json(signals);
+    const signals = await TeamSignal.find({ expires_at: { $gt: new Date() } }).sort({ created_at: -1 }).populate('user_id');
+    const formatted = signals.map(s => {
+      const sObj = s.toJSON();
+      if (s.user_id) {
+        sObj.name = s.user_id.name;
+        sObj.avatar = s.user_id.avatar;
+        sObj.role = s.user_id.role;
+        sObj.hack_score = s.user_id.hack_score;
+        sObj.user_id = s.user_id._id;
+      }
+      return sObj;
+    });
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -319,7 +359,7 @@ app.get('/signals/active', authenticate, async (req, res) => {
 // ---------------- HACKATHONS ----------------
 app.get('/hackathons', authenticate, async (req, res) => {
   try {
-    const user = await db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+    const user = await User.findById(req.user.id);
     let userSkills = [];
     try { userSkills = JSON.parse(user.skills || '[]'); } catch { /* ignore */ }
 
@@ -336,23 +376,28 @@ app.get('/hackathons', authenticate, async (req, res) => {
         const date = $(el).find('.submission-period').text().trim() || 'TBA';
         const prize_pool = $(el).find('.prize-amount').text().trim() || 'Prizes TBA';
         const url = $(el).find('a').attr('href') || '';
-        const id = crypto.createHash('md5').update(url + name).digest('hex').substring(0, 16);
+        // Fake ID for external
+        const id = new mongoose.Types.ObjectId().toHexString();
         externalHackathons.push({ id, name, date, prize_pool, tech_stack_focus: 'Open Stack (React, Node, Python, AI)', team_size: '1-4', url });
       });
     } catch (e) {
       console.log('Failed to scrape devpost:', e.message);
     }
 
-    const dbHackathons = await db.prepare('SELECT * FROM hackathons ORDER BY created_at DESC').all();
-    externalHackathons = [...externalHackathons, ...dbHackathons];
+    const dbHackathons = await Hackathon.find().sort({ created_at: -1 });
+    externalHackathons = [...externalHackathons, ...dbHackathons.map(h => h.toJSON())];
 
     const withFitScore = await Promise.all(externalHackathons.map(async h => {
       let score = 50 + Math.floor(Math.random() * 20);
       const hTags = (h.tech_stack_focus || '').toLowerCase().split(',').map(s => s.trim());
       const uTags = userSkills.map(s => s.toLowerCase());
       score += uTags.filter(ut => hTags.some(ht => ht.includes(ut) || ut.includes(ht))).length * 15;
-      const joined = await db.prepare('SELECT * FROM user_hackathons WHERE user_id = ? AND hackathon_id = ?').get(req.user.id, h.id);
-      return { ...h, fit_score: Math.min(100, score), joined: !!joined };
+      
+      let joined = false;
+      if (mongoose.Types.ObjectId.isValid(h.id)) {
+        joined = !!(await UserHackathon.findOne({ user_id: req.user.id, hackathon_id: h.id }));
+      }
+      return { ...h, fit_score: Math.min(100, score), joined };
     }));
 
     withFitScore.sort((a, b) => b.fit_score - a.fit_score);
@@ -364,8 +409,9 @@ app.get('/hackathons', authenticate, async (req, res) => {
 
 app.post('/hackathons/:id/join', authenticate, async (req, res) => {
   try {
-    const existing = await db.prepare('SELECT * FROM user_hackathons WHERE user_id = ? AND hackathon_id = ?').get(req.user.id, req.params.id);
-    if (!existing) await db.prepare('INSERT INTO user_hackathons (user_id, hackathon_id) VALUES (?, ?)').run(req.user.id, req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid hackathon ID' });
+    const existing = await UserHackathon.findOne({ user_id: req.user.id, hackathon_id: req.params.id });
+    if (!existing) await UserHackathon.create({ user_id: req.user.id, hackathon_id: req.params.id });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -375,11 +421,11 @@ app.post('/hackathons/:id/join', authenticate, async (req, res) => {
 // ---------------- CONNECTIONS ----------------
 app.post('/connections/request', authenticate, async (req, res) => {
   const { receiverId } = req.body;
-  if (!receiverId) return res.status(400).json({ error: 'receiverId is required' });
+  if (!receiverId || !mongoose.Types.ObjectId.isValid(receiverId)) return res.status(400).json({ error: 'valid receiverId is required' });
   try {
-    const existing = await db.prepare('SELECT id FROM connections WHERE sender_id = ? AND receiver_id = ?').get(req.user.id, receiverId);
+    const existing = await Connection.findOne({ sender_id: req.user.id, receiver_id: receiverId });
     if (existing) return res.status(400).json({ error: 'Request already sent' });
-    await db.prepare('INSERT INTO connections (id, sender_id, receiver_id) VALUES (?, ?, ?)').run(crypto.randomUUID(), req.user.id, receiverId);
+    await Connection.create({ sender_id: req.user.id, receiver_id: receiverId });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -389,7 +435,7 @@ app.post('/connections/request', authenticate, async (req, res) => {
 app.post('/connections/accept', authenticate, async (req, res) => {
   const { senderId } = req.body;
   try {
-    await db.prepare('UPDATE connections SET status = ? WHERE sender_id = ? AND receiver_id = ?').run('accepted', senderId, req.user.id);
+    await Connection.updateOne({ sender_id: senderId, receiver_id: req.user.id }, { status: 'accepted' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -398,22 +444,39 @@ app.post('/connections/accept', authenticate, async (req, res) => {
 
 app.get('/connections', authenticate, async (req, res) => {
   try {
-    const pending = await db.prepare(`
-      SELECT c.*, u.name, u.bio, u.avatar, u.role FROM connections c
-      JOIN users u ON c.sender_id = u.id WHERE c.receiver_id = ? AND c.status = 'pending'
-    `).all(req.user.id);
+    const pendingConns = await Connection.find({ receiver_id: req.user.id, status: 'pending' }).populate('sender_id');
+    const pending = pendingConns.map(c => {
+      const cObj = c.toJSON();
+      if (c.sender_id) {
+        cObj.name = c.sender_id.name;
+        cObj.bio = c.sender_id.bio;
+        cObj.avatar = c.sender_id.avatar;
+        cObj.role = c.sender_id.role;
+        cObj.sender_id = c.sender_id._id;
+      }
+      return cObj;
+    });
 
-    const accepted = await db.prepare(`
-      SELECT c.*,
-        CASE WHEN c.sender_id = ? THEN ru.id ELSE su.id END as user_id,
-        CASE WHEN c.sender_id = ? THEN ru.name ELSE su.name END as name,
-        CASE WHEN c.sender_id = ? THEN ru.avatar ELSE su.avatar END as avatar,
-        CASE WHEN c.sender_id = ? THEN ru.role ELSE su.role END as role,
-        CASE WHEN c.sender_id = ? THEN ru.public_key ELSE su.public_key END as public_key
-      FROM connections c
-      JOIN users su ON c.sender_id = su.id JOIN users ru ON c.receiver_id = ru.id
-      WHERE (c.sender_id = ? OR c.receiver_id = ?) AND c.status = 'accepted'
-    `).all(req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id, req.user.id);
+    const acceptedConns = await Connection.find({
+      $or: [{ sender_id: req.user.id }, { receiver_id: req.user.id }],
+      status: 'accepted'
+    }).populate('sender_id receiver_id');
+
+    const accepted = acceptedConns.map(c => {
+      const cObj = c.toJSON();
+      const isSender = c.sender_id._id.toString() === req.user.id;
+      const otherUser = isSender ? c.receiver_id : c.sender_id;
+      
+      cObj.user_id = otherUser._id;
+      cObj.name = otherUser.name;
+      cObj.avatar = otherUser.avatar;
+      cObj.role = otherUser.role;
+      cObj.public_key = otherUser.public_key;
+      
+      cObj.sender_id = c.sender_id._id;
+      cObj.receiver_id = c.receiver_id._id;
+      return cObj;
+    });
 
     res.json({ pending, accepted });
   } catch (err) {
@@ -422,10 +485,13 @@ app.get('/connections', authenticate, async (req, res) => {
 });
 
 async function getAcceptedConnection(userId, otherId) {
-  return db.prepare(`
-    SELECT id FROM connections
-    WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)) AND status = 'accepted'
-  `).get(userId, otherId, otherId, userId);
+  return Connection.findOne({
+    $or: [
+      { sender_id: userId, receiver_id: otherId },
+      { sender_id: otherId, receiver_id: userId }
+    ],
+    status: 'accepted'
+  });
 }
 
 // ---------------- STACK CLASH ----------------
@@ -434,13 +500,13 @@ app.get('/connections/:userId/clash/challenge', authenticate, async (req, res) =
     const conn = await getAcceptedConnection(req.user.id, req.params.userId);
     if (!conn) return res.status(403).json({ error: 'No accepted connection' });
 
-    const challenge = pickChallenge(conn.id);
+    const challenge = pickChallenge(conn._id.toString());
     const reveal = req.query.reveal === 'true';
 
     if (reveal) {
-      res.json({ connectionId: conn.id, challenge });
+      res.json({ connectionId: conn._id, challenge });
     } else {
-      res.json({ connectionId: conn.id, challenge: getChallengePublic(challenge) });
+      res.json({ connectionId: conn._id, challenge: getChallengePublic(challenge) });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -451,10 +517,13 @@ app.post('/connections/:id/clash', authenticate, async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: 'code is required' });
   try {
-    const conn = await db.prepare('SELECT * FROM connections WHERE id = ? AND (sender_id = ? OR receiver_id = ?)').get(req.params.id, req.user.id, req.user.id);
+    const conn = await Connection.findOne({
+      _id: req.params.id,
+      $or: [{ sender_id: req.user.id }, { receiver_id: req.user.id }]
+    });
     if (!conn) return res.status(403).json({ error: 'Connection not found' });
 
-    const challenge = pickChallenge(conn.id);
+    const challenge = pickChallenge(conn._id.toString());
     if (!validateSubmission(challenge.id, code)) {
       return res.status(400).json({
         error: 'Solution does not pass validation. Check your logic and try again.',
@@ -462,10 +531,9 @@ app.post('/connections/:id/clash', authenticate, async (req, res) => {
       });
     }
 
-    const existing = await db.prepare('SELECT id FROM stack_clashes WHERE connection_id = ? AND user_id = ?').get(conn.id, req.user.id);
+    const existing = await StackClash.findOne({ connection_id: conn._id, user_id: req.user.id });
     if (!existing) {
-      await db.prepare('INSERT INTO stack_clashes (id, connection_id, user_id, challenge_id, code) VALUES (?, ?, ?, ?, ?)')
-        .run(crypto.randomUUID(), conn.id, req.user.id, challenge.id, code);
+      await StackClash.create({ connection_id: conn._id, user_id: req.user.id, challenge_id: challenge.id, code });
     }
     res.json({ success: true, challengeId: challenge.id });
   } catch (err) {
@@ -478,11 +546,17 @@ app.get('/connections/:userId/clashes', authenticate, async (req, res) => {
     const conn = await getAcceptedConnection(req.user.id, req.params.userId);
     if (!conn) return res.json({ clashes: [] });
 
-    const clashes = await db.prepare(`
-      SELECT c.*, u.name FROM stack_clashes c JOIN users u ON c.user_id = u.id WHERE c.connection_id = ?
-    `).all(conn.id);
+    const clashesRaw = await StackClash.find({ connection_id: conn._id }).populate('user_id');
+    const clashes = clashesRaw.map(c => {
+      const cObj = c.toJSON();
+      if (c.user_id) {
+        cObj.name = c.user_id.name;
+        cObj.user_id = c.user_id._id;
+      }
+      return cObj;
+    });
 
-    res.json({ connectionId: conn.id, clashes });
+    res.json({ connectionId: conn._id, clashes });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -496,9 +570,8 @@ app.post('/messages', authenticate, async (req, res) => {
     const conn = await getAcceptedConnection(req.user.id, receiverId);
     if (!conn) return res.status(403).json({ error: 'Users are not connected' });
 
-    const msgId = crypto.randomUUID();
-    await db.prepare('INSERT INTO messages (id, sender_id, receiver_id, content) VALUES (?, ?, ?, ?)').run(msgId, req.user.id, receiverId, content);
-    res.json({ id: msgId, sender_id: req.user.id, receiver_id: receiverId, content, created_at: new Date().toISOString() });
+    const msg = await Message.create({ sender_id: req.user.id, receiver_id: receiverId, content });
+    res.json(msg.toJSON());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -507,12 +580,13 @@ app.post('/messages', authenticate, async (req, res) => {
 app.get('/messages/:userId', authenticate, async (req, res) => {
   try {
     const otherId = req.params.userId;
-    const messages = await db.prepare(`
-      SELECT * FROM messages
-      WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
-      ORDER BY created_at ASC
-    `).all(req.user.id, otherId, otherId, req.user.id);
-    res.json(messages);
+    const messages = await Message.find({
+      $or: [
+        { sender_id: req.user.id, receiver_id: otherId },
+        { sender_id: otherId, receiver_id: req.user.id }
+      ]
+    }).sort({ created_at: 1 });
+    res.json(messages.map(m => m.toJSON()));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -521,10 +595,16 @@ app.get('/messages/:userId', authenticate, async (req, res) => {
 // ---------------- SPOTLIGHT ----------------
 app.get('/spotlight', authenticate, async (req, res) => {
   try {
-    const projects = await db.prepare(`
-      SELECT p.*, u.name as author_name, u.avatar as author_avatar FROM projects p
-      JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC
-    `).all();
+    const projectsRaw = await Project.find().sort({ created_at: -1 }).populate('user_id');
+    const projects = projectsRaw.map(p => {
+      const pObj = p.toJSON();
+      if (p.user_id) {
+        pObj.author_name = p.user_id.name;
+        pObj.author_avatar = p.user_id.avatar;
+        pObj.user_id = p.user_id._id;
+      }
+      return pObj;
+    });
     res.json(projects);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -534,9 +614,8 @@ app.get('/spotlight', authenticate, async (req, res) => {
 app.post('/projects', authenticate, async (req, res) => {
   const { title, description, link, tags } = req.body;
   try {
-    const id = crypto.randomUUID();
-    await db.prepare('INSERT INTO projects (id, user_id, title, description, link, tags) VALUES (?, ?, ?, ?, ?, ?)').run(id, req.user.id, title, description, link, tags);
-    res.json({ id, title, description, link, tags });
+    const project = await Project.create({ user_id: req.user.id, title, description, link, tags });
+    res.json(project.toJSON());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -547,18 +626,19 @@ app.post('/debriefs', authenticate, async (req, res) => {
   const { hackathon_id, project_link, hardest_challenge, do_differently, teammate_rating, teammate_tags, hack_again } = req.body;
   if (!hackathon_id || !project_link) return res.status(400).json({ error: 'hackathon_id and project_link required' });
   try {
-    const id = crypto.randomUUID();
-    await db.prepare(`
-      INSERT INTO debriefs (id, hackathon_id, user_id, project_link, hardest_challenge, do_differently, teammate_rating, teammate_tags, hack_again)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, hackathon_id, req.user.id, project_link, hardest_challenge, do_differently, teammate_rating || 0, teammate_tags || '', hack_again || '');
+    const debrief = await Debrief.create({
+      hackathon_id, user_id: req.user.id, project_link, hardest_challenge, do_differently,
+      teammate_rating: teammate_rating || 0, teammate_tags: teammate_tags || '', hack_again: hack_again || ''
+    });
 
     if (teammate_rating >= 4) {
-      await db.prepare('INSERT INTO reputation (id, user_id, score_component, points) VALUES (?, ?, ?, ?)').run(crypto.randomUUID(), req.user.id, 'High teammate rating', 25);
-      const current = await db.prepare('SELECT hack_score FROM users WHERE id = ?').get(req.user.id);
-      await db.prepare('UPDATE users SET hack_score = ? WHERE id = ?').run((current?.hack_score || 0) + 25, req.user.id);
+      await Reputation.create({ user_id: req.user.id, score_component: 'High teammate rating', points: 25 });
+      const current = await User.findById(req.user.id);
+      if (current) {
+        await User.findByIdAndUpdate(req.user.id, { hack_score: (current.hack_score || 0) + 25 });
+      }
     }
-    res.json({ id });
+    res.json({ id: debrief._id });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -566,12 +646,21 @@ app.post('/debriefs', authenticate, async (req, res) => {
 
 app.get('/stories/:id', async (req, res) => {
   try {
-    const debrief = await db.prepare(`
-      SELECT d.*, u.name as user_name, u.avatar as user_avatar, h.name as hackathon_name
-      FROM debriefs d JOIN users u ON d.user_id = u.id JOIN hackathons h ON d.hackathon_id = h.id WHERE d.id = ?
-    `).get(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Invalid story ID' });
+    const debrief = await Debrief.findById(req.params.id).populate('user_id hackathon_id');
     if (!debrief) return res.status(404).json({ error: 'Story not found' });
-    res.json(debrief);
+    
+    const dObj = debrief.toJSON();
+    if (debrief.user_id) {
+      dObj.user_name = debrief.user_id.name;
+      dObj.user_avatar = debrief.user_id.avatar;
+      dObj.user_id = debrief.user_id._id;
+    }
+    if (debrief.hackathon_id) {
+      dObj.hackathon_name = debrief.hackathon_id.name;
+      dObj.hackathon_id = debrief.hackathon_id._id;
+    }
+    res.json(dObj);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
