@@ -1,12 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Search, Sparkles, Cpu, ArrowRight, Heart, Globe, Users, Trophy } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, ArrowRight, Code2, Heart, Smartphone, Database, Palette, Shield, Terminal, Code, Zap } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../store/useAuth';
-import { useMousePosition } from '../hooks/useMousePosition';
 import { fetchAPI } from '../lib/api';
-import { CursorSpotlight } from '../components/layout/MeshBackground';
 
 // -- Scramble Text Effect (Hero) --
 const SCRAMBLE_CHARS = '!<>-_\\\\/[]{}—=+*^?#________';
@@ -40,108 +38,92 @@ const useScrambleText = (words: string[]) => {
   return text;
 };
 
-// -- Magnetic Button Component --
-function MagneticButton({ children, onClick, className = '' }: any) {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+// --- Abstract Swipe Stack Component ---
+const SKILL_CARDS = [
+  { id: 1, title: 'Frontend Developer', icon: Smartphone, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
+  { id: 2, title: 'Backend Engineer', icon: Database, color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/20' },
+  { id: 3, title: 'UX/UI Designer', icon: Palette, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
+  { id: 4, title: 'Security Expert', icon: Shield, color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' },
+  { id: 5, title: 'DevOps Wizard', icon: Terminal, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+];
 
-  const handleMouse = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const { clientX, clientY } = e;
-    const { height, width, left, top } = ref.current!.getBoundingClientRect();
-    const middleX = clientX - (left + width / 2);
-    const middleY = clientY - (top + height / 2);
-    setPosition({ x: middleX * 0.2, y: middleY * 0.2 });
-  };
+function AutoSwipeDeck() {
+  const [cards, setCards] = useState(SKILL_CARDS);
 
-  const reset = () => {
-    setPosition({ x: 0, y: 0 });
-  };
-
-  return (
-    <motion.button
-      ref={ref}
-      onMouseMove={handleMouse}
-      onMouseLeave={reset}
-      onClick={onClick}
-      animate={{ x: position.x, y: position.y }}
-      transition={{ type: 'spring', stiffness: 150, damping: 15, mass: 0.1 }}
-      className={`relative inline-flex items-center justify-center gap-2 group px-8 py-4 rounded-full font-bold text-white transition-colors z-50 ${className}`}
-    >
-      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#58A6FF] to-[#BC8CFF] opacity-80 blur-md transition-opacity group-hover:opacity-100 animate-spin-border"></div>
-      <div className="absolute inset-[1px] rounded-full bg-[#0D1117] transition-colors group-hover:bg-[#161B22]"></div>
-      <span className="relative flex items-center gap-2 z-10 font-mono tracking-widest uppercase">
-        {children}
-      </span>
-    </motion.button>
-  );
-}
-
-// -- Bento Card Component (Mouse Tracking Gradient) --
-function BentoCard({ children, className = '' }: any) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCards((prev) => {
+        const newCards = [...prev];
+        const first = newCards.shift();
+        if (first) newCards.push(first);
+        return newCards;
+      });
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      className={`bento-card p-8 flex flex-col justify-between ${className}`}
-      style={{
-        '--mouse-x': `${mousePosition.x}px`,
-        '--mouse-y': `${mousePosition.y}px`,
-      } as React.CSSProperties}
-    >
-      <div className="relative z-10 h-full flex flex-col">
-        {children}
-      </div>
+    <div className="relative w-full max-w-sm aspect-[3/4] mx-auto perspective-1000">
+      <AnimatePresence>
+        {cards.map((card, index) => {
+          const isTop = index === 0;
+
+          return (
+            <motion.div
+              key={card.id}
+              layout
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ 
+                scale: 1 - index * 0.05, 
+                opacity: 1 - index * 0.2, 
+                y: index * 20,
+                zIndex: cards.length - index
+              }}
+              exit={{ x: 200, opacity: 0, rotate: 15 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className={`absolute top-0 left-0 w-full h-full rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl bg-[#161B22] flex flex-col p-8 overflow-hidden`}
+            >
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-auto ${card.bg} ${card.border} border`}>
+                <card.icon className={`w-8 h-8 ${card.color}`} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">{card.title}</h3>
+                <div className="flex gap-2 mb-4">
+                  <span className="w-16 h-2 rounded-full bg-white/10"></span>
+                  <span className="w-12 h-2 rounded-full bg-white/10"></span>
+                  <span className="w-20 h-2 rounded-full bg-white/10"></span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-10 h-10 rounded-full bg-white/5"></span>
+                  <span className="w-10 h-10 rounded-full bg-white/5"></span>
+                  <span className="w-10 h-10 rounded-full bg-white/5"></span>
+                </div>
+              </div>
+              
+              {/* Swipe right indicator */}
+              {isTop && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
+                  className="absolute top-8 right-8 border-4 border-green-500 text-green-500 rounded-lg px-4 py-1 font-bold text-xl uppercase rotate-12"
+                >
+                  Match
+                </motion.div>
+              )}
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
-  );
-}
-
-// -- Hero Floating Card Mockup --
-function FloatingMockupCard({ delay, rotate, x, y, name, role, avatar, badge }: any) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, scale: 0.8 }}
-      animate={{ opacity: 1, y, x, rotate, scale: 1 }}
-      transition={{ duration: 1, delay, type: 'spring', bounce: 0.4 }}
-      className={`absolute w-64 p-4 rounded-2xl glass-card border border-white/10 shadow-2xl backdrop-blur-2xl bg-[#0D1117]/80 hidden md:block ${delay % 2 === 0 ? 'animate-float-slow' : 'animate-float-slower'}`}
-      style={{ zIndex: 10 + Math.floor(delay * 10) }}
-    >
-      <div className="flex gap-3 items-center mb-3">
-        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#58A6FF]/50 shrink-0 shadow-[0_0_15px_rgba(88,166,255,0.3)]">
-          <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
-        </div>
-        <div>
-          <h4 className="text-sm font-bold text-white leading-tight">{name}</h4>
-          <p className="text-[10px] text-[#8B949E] font-mono mt-0.5">{role}</p>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <span className={`text-[9px] px-2 py-0.5 rounded-full border ${badge.color}`}>{badge.text}</span>
-      </div>
-    </motion.div>
   );
 }
 
 export default function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const mouse = useMousePosition();
   const [loadingGuest, setLoadingGuest] = useState(false);
   const scrambleWord = useScrambleText(['Squad', 'Team', 'Co-Founder', 'Partner']);
-
-  const { scrollYProgress } = useScroll();
-  const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
 
   const handleGuestLogin = async () => {
     setLoadingGuest(true);
@@ -156,73 +138,26 @@ export default function LandingPage() {
     }
   };
 
-  const TechMarquee = () => {
-    const tech = ['React', 'Next.js', 'Tailwind', 'Node.js', 'Python', 'TypeScript', 'GraphQL', 'PostgreSQL', 'MongoDB', 'Docker', 'AWS', 'Framer Motion'];
-    return (
-      <div className="w-full overflow-hidden py-10 rotate-[-2deg] scale-110 bg-[#BC8CFF]/5 border-y border-[#BC8CFF]/10 backdrop-blur-sm relative z-0">
-        <div className="flex whitespace-nowrap animate-marquee">
-          {[...tech, ...tech, ...tech].map((t, i) => (
-            <span key={i} className="mx-8 text-2xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-white/20 to-white/5 uppercase tracking-widest opacity-50">
-              {t} <span className="text-[#BC8CFF]/30 mx-4">•</span>
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-[#010409] text-[#C9D1D9] selection:bg-[#BC8CFF]/30 overflow-x-hidden">
-      <CursorSpotlight x={mouse.x} y={mouse.y} />
+    <div className="min-h-screen bg-[#0D1117] text-[#C9D1D9] selection:bg-white/20 overflow-x-hidden font-sans">
       
-      {/* Background Gradients */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#58A6FF]/10 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#BC8CFF]/10 blur-[120px]" />
-      </div>
+      {/* Background Noise & Clean Lines */}
+      <div className="fixed inset-0 pointer-events-none z-0 noise-overlay opacity-30"></div>
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 overflow-hidden">
+      <section className="relative min-h-screen flex flex-col md:flex-row items-center justify-center px-6 lg:px-20 z-10 max-w-7xl mx-auto gap-12 lg:gap-24 pt-20 pb-10">
         
-        {/* Floating Ecosystem Background */}
-        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-40 sm:opacity-100">
-          <FloatingMockupCard delay={0.1} rotate={-12} x={-350} y={-100} name="Alex Chen" role="Full Stack Developer" avatar="https://i.pravatar.cc/150?u=alex" badge={{text: "React Master", color: "text-[#58A6FF] border-[#58A6FF]/30 bg-[#58A6FF]/10"}} />
-          <FloatingMockupCard delay={0.3} rotate={8} x={350} y={-50} name="Sarah Jones" role="UI/UX Designer" avatar="https://i.pravatar.cc/150?u=sarah" badge={{text: "Figma Pro", color: "text-[#BC8CFF] border-[#BC8CFF]/30 bg-[#BC8CFF]/10"}} />
-          <FloatingMockupCard delay={0.5} rotate={-5} x={-280} y={150} name="David Kim" role="AI Researcher" avatar="https://i.pravatar.cc/150?u=david" badge={{text: "Python Guru", color: "text-[#3FB950] border-[#3FB950]/30 bg-[#3FB950]/10"}} />
-          <FloatingMockupCard delay={0.7} rotate={15} x={250} y={180} name="Emily Davis" role="Backend Engineer" avatar="https://i.pravatar.cc/150?u=emily" badge={{text: "Node.js", color: "text-yellow-400 border-yellow-400/30 bg-yellow-400/10"}} />
-          
-          {/* Laser connection line SVG */}
-          <svg className="absolute inset-0 w-full h-full hidden md:block" style={{ filter: 'drop-shadow(0 0 10px rgba(188, 140, 255, 0.5))' }}>
-             <motion.path 
-                d="M 250 150 Q 500 250 750 150" 
-                fill="transparent" 
-                stroke="url(#gradient)" 
-                strokeWidth="2"
-                strokeDasharray="10,10"
-                className="animate-marquee"
-                style={{ strokeDashoffset: mouse.x * 0.1 }}
-             />
-             <defs>
-               <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                 <stop offset="0%" stopColor="#58A6FF" stopOpacity="0.1" />
-                 <stop offset="50%" stopColor="#BC8CFF" stopOpacity="1" />
-                 <stop offset="100%" stopColor="#3FB950" stopOpacity="0.1" />
-               </linearGradient>
-             </defs>
-          </svg>
-        </div>
-
-        <motion.div 
-          className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center"
-        >
+        {/* Left: Copy */}
+        <div className="flex-1 flex flex-col items-start text-left max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8 shadow-[0_0_30px_rgba(139,92,246,0.15)]"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 mb-8"
           >
-            <Sparkles className="w-4 h-4 text-[#BC8CFF]" />
-            <span className="text-xs font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#BC8CFF] to-[#58A6FF]">
-              Hackathon matchmaking, reimagined.
+            <Zap className="w-4 h-4 text-white" />
+            <span className="text-xs font-mono font-bold tracking-widest text-white uppercase">
+              Tinder for Hackathons
             </span>
           </motion.div>
 
@@ -230,11 +165,11 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tight font-display mb-6 leading-tight"
+            className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight text-white mb-6 leading-[1.1]"
           >
-            Find Your <br className="sm:hidden" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#58A6FF] via-[#BC8CFF] to-[#3FB950] animate-shimmer-text">
-              {scrambleWord}.
+            Find your next <br />
+            <span className="text-white/50 border-b-4 border-white/20 pb-2 inline-block min-w-[200px]">
+              {scrambleWord}
             </span>
           </motion.h1>
 
@@ -242,20 +177,24 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl sm:text-2xl text-[#8B949E] max-w-2xl mx-auto mb-10 leading-relaxed font-light"
+            className="text-xl sm:text-2xl text-[#8B949E] mb-10 leading-relaxed max-w-lg"
           >
-            The smoothest way to find hackathon teammates — ranked by skills, availability, and vibe.
+            Stop scrolling Discord. Swipe to find developers, designers, and builders based on their tech stack.
           </motion.p>
 
           <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, type: "spring" }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
           >
-            <MagneticButton onClick={() => user ? navigate('/discover') : navigate('/signup')}>
-              Enter App <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </MagneticButton>
+            <Button 
+              size="lg" 
+              onClick={() => user ? navigate('/discover') : navigate('/signup')}
+              className="w-full sm:w-auto bg-white text-black hover:bg-gray-200 font-bold px-10 py-4 h-auto text-lg rounded-full flex items-center justify-center gap-2"
+            >
+              Start Swiping <ArrowRight className="w-5 h-5" />
+            </Button>
             
             {!user && (
               <Button 
@@ -263,107 +202,82 @@ export default function LandingPage() {
                 size="lg"
                 onClick={handleGuestLogin}
                 disabled={loadingGuest}
-                className="font-mono uppercase tracking-widest text-sm text-[#8B949E] hover:text-white mt-4 sm:mt-0"
+                className="w-full sm:w-auto font-mono uppercase tracking-widest text-sm text-[#8B949E] hover:text-white px-8"
               >
-                {loadingGuest ? 'Entering...' : 'Try as Guest'}
+                {loadingGuest ? 'Loading...' : 'Try as Guest'}
               </Button>
             )}
           </motion.div>
-        </motion.div>
+        </div>
 
+        {/* Right: Abstract Swipe UI */}
         <motion.div 
-          style={{ y: y1 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 hidden sm:flex"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4, type: 'spring' }}
+          className="flex-1 w-full flex justify-center lg:justify-end mt-10 md:mt-0"
         >
-          <span className="text-xs font-mono tracking-widest uppercase">Scroll to explore</span>
-          <div className="w-[1px] h-12 bg-gradient-to-b from-white/50 to-transparent"></div>
+          <AutoSwipeDeck />
         </motion.div>
       </section>
 
-      {/* --- MARQUEE --- */}
-      <TechMarquee />
-
-      {/* --- BENTO BOX FEATURES --- */}
-      <section className="relative py-32 px-4 sm:px-6 max-w-7xl mx-auto z-10">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl sm:text-5xl font-black text-white font-display mb-4">
-            Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#BC8CFF] to-[#58A6FF]">win.</span>
-          </h2>
-          <p className="text-[#8B949E] max-w-xl mx-auto text-lg">Stop scrolling Discord channels. Start building.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[300px]">
-          {/* Box 1: Large */}
-          <BentoCard className="md:col-span-2 md:row-span-2 group min-h-[400px] md:min-h-0">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#58A6FF]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[100px] pointer-events-none rounded-full" />
-            <Search className="w-10 h-10 text-[#58A6FF] mb-6" />
-            <h3 className="text-3xl font-black text-white mb-4">Algorithmic Matching</h3>
-            <p className="text-[#8B949E] text-lg max-w-md">Our matching engine pairs you with teammates based on overlapping skills, complementary roles, and timezone availability. It's like magic.</p>
-            
-            <div className="absolute bottom-8 right-8 w-48 h-48 sm:w-64 sm:h-64 opacity-50 group-hover:opacity-100 transition-opacity hidden sm:block">
-               <div className="relative w-full h-full">
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border border-[#58A6FF]/30 rounded-full animate-[spin_10s_linear_infinite]" />
-                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-[#BC8CFF]/20 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
-                 <Cpu className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-[#58A6FF]" />
-               </div>
+      {/* --- THREE STEP FEATURES --- */}
+      <section className="relative py-32 px-6 lg:px-20 max-w-7xl mx-auto z-10 border-t border-white/5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          
+          <div className="flex flex-col items-start group">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 transition-colors group-hover:bg-white group-hover:text-black text-white">
+              <Code2 className="w-8 h-8" />
             </div>
-          </BentoCard>
+            <h3 className="text-2xl font-bold text-white mb-4">1. Filter by Stack</h3>
+            <p className="text-[#8B949E] text-lg leading-relaxed">
+              Looking for a React dev or a Rust fanatic? Filter the pool of hackers by exactly what you need to build your project.
+            </p>
+          </div>
 
-          {/* Box 2 */}
-          <BentoCard className="group min-h-[250px] md:min-h-0">
-            <Globe className="w-8 h-8 text-[#BC8CFF] mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Global Network</h3>
-            <p className="text-[#8B949E] text-sm">Find teammates near you, or across the globe. Built-in geolocation matching.</p>
-          </BentoCard>
-
-          {/* Box 3 */}
-          <BentoCard className="group overflow-visible min-h-[250px] md:min-h-0">
-            <Trophy className="w-8 h-8 text-[#3FB950] mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">Gamified Profiles</h3>
-            <p className="text-[#8B949E] text-sm mb-4">Earn XP, level up, and unlock legendary ranks as you build.</p>
-            <div className="mt-auto bg-[#161B22] border border-[#3FB950]/30 rounded-lg p-3 flex justify-between items-center transform group-hover:scale-105 transition-transform shadow-[0_0_20px_rgba(63,185,80,0.1)]">
-              <span className="text-xs font-mono font-bold text-white">Lvl 42 Architect</span>
-              <span className="text-xs text-[#3FB950] font-mono">+50 XP</span>
+          <div className="flex flex-col items-start group">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 transition-colors group-hover:bg-white group-hover:text-black text-white">
+              <Heart className="w-8 h-8" />
             </div>
-          </BentoCard>
+            <h3 className="text-2xl font-bold text-white mb-4">2. Swipe to Match</h3>
+            <p className="text-[#8B949E] text-lg leading-relaxed">
+              Swipe right if their skills and vibe match your idea. Mutual swipes instantly open a chat channel to brainstorm.
+            </p>
+          </div>
 
-          {/* Box 4: Wide */}
-          <BentoCard className="md:col-span-3 min-h-[300px] md:min-h-0">
-             <div className="flex flex-col md:flex-row gap-8 items-center h-full">
-               <div className="flex-1">
-                 <Users className="w-10 h-10 text-white mb-6" />
-                 <h3 className="text-3xl font-black text-white mb-4">Squad Management</h3>
-                 <p className="text-[#8B949E] text-lg">Create a squad, invite members with a secret join code, and manage your hackathon team from one powerful dashboard.</p>
-               </div>
-               <div className="flex-1 flex justify-center md:justify-end">
-                 <div className="flex -space-x-4">
-                   {[1,2,3,4].map((i) => (
-                     <div key={i} className="w-16 h-16 rounded-full border-4 border-[#0D1117] bg-[#161B22] overflow-hidden shadow-xl z-10 hover:scale-110 hover:z-20 transition-all cursor-pointer">
-                        <img src={`https://i.pravatar.cc/150?img=${i+10}`} alt="avatar" />
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             </div>
-          </BentoCard>
+          <div className="flex flex-col items-start group">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 transition-colors group-hover:bg-white group-hover:text-black text-white">
+              <Code className="w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-4">3. Form a Squad</h3>
+            <p className="text-[#8B949E] text-lg leading-relaxed">
+              Bring your matches together into a private Squad. Manage your hackathon submission, share repos, and ship it.
+            </p>
+          </div>
+
         </div>
       </section>
 
       {/* --- CTA SECTION --- */}
-      <section className="relative py-32 px-4 border-t border-white/5 bg-gradient-to-b from-transparent to-[#BC8CFF]/5">
+      <section className="relative py-32 px-6 border-t border-white/5 bg-[#161B22]/30">
         <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
-          <h2 className="text-5xl sm:text-7xl font-black text-white font-display mb-8">
-            Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#BC8CFF] to-[#58A6FF]">ship?</span>
+          <Sparkles className="w-12 h-12 text-white/20 mb-6" />
+          <h2 className="text-5xl sm:text-7xl font-black text-white mb-10 tracking-tight">
+            Stop searching.<br />Start shipping.
           </h2>
-          <MagneticButton onClick={() => user ? navigate('/discover') : navigate('/signup')} className="scale-110">
-            Join the Network
-          </MagneticButton>
+          <Button 
+            size="lg"
+            onClick={() => user ? navigate('/discover') : navigate('/signup')} 
+            className="bg-white text-black hover:bg-gray-200 font-bold px-12 py-5 text-xl rounded-full"
+          >
+            Create Your Profile
+          </Button>
         </div>
       </section>
       
       {/* Footer */}
-      <footer className="py-8 text-center text-sm font-mono text-[#8B949E] border-t border-white/5">
-        <p className="flex items-center justify-center gap-2">Built with <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse" /> for Hackathons</p>
+      <footer className="py-12 text-center text-sm font-mono text-[#8B949E] border-t border-white/5 bg-[#0D1117]">
+        <p className="flex items-center justify-center gap-2">Designed for Hackers, by Hackers.</p>
       </footer>
     </div>
   );
