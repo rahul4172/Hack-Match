@@ -6,6 +6,7 @@ import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { generateKeyPair, exportPublicKey, exportPrivateKey } from '../lib/crypto';
+import { MapPin, CheckCircle } from 'lucide-react';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -13,12 +14,50 @@ export default function SignUpPage() {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [location, setLocation] = useState('');
+  const [locLoading, setLocLoading] = useState(false);
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser');
+      return;
+    }
+    setLocLoading(true);
+    setError('');
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      setLat(latitude);
+      setLng(longitude);
+      
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        const data = await res.json();
+        const city = data.address.city || data.address.town || data.address.village;
+        const state = data.address.state;
+        if (city && state) setLocation(`${city}, ${state}`);
+      } catch (e) {
+        console.error("Reverse geocoding failed", e);
+      } finally {
+        setLocLoading(false);
+      }
+    }, () => {
+      setError('You must allow location access to join HackMatch.');
+      setLocLoading(false);
+    });
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (lat === null || lng === null) {
+      setError('Location tracking is mandatory to join HackMatch');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
@@ -28,7 +67,7 @@ export default function SignUpPage() {
 
       const res = await fetchAPI('/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ email, password, name, public_key: pubKey }),
+        body: JSON.stringify({ email, password, name, public_key: pubKey, lat, lng, location }),
       });
       localStorage.setItem('token', res.token);
       localStorage.setItem('private_key', privKey);
@@ -93,7 +132,19 @@ export default function SignUpPage() {
                   required
                 />
               </div>
-              <Button type="submit" variant="primary" className="w-full mt-2 py-3" disabled={loading}>
+              <div>
+                <label className="block text-sm font-mono text-[#8B949E] mb-1.5">Location (Required)</label>
+                {!lat ? (
+                  <button type="button" onClick={handleDetectLocation} disabled={locLoading} className="w-full bg-black/40 border border-[#58A6FF]/50 text-[#58A6FF] rounded-xl p-3 flex items-center justify-center gap-2 hover:bg-[#58A6FF]/10 transition-all text-sm">
+                    <MapPin className="w-4 h-4" /> {locLoading ? 'Detecting...' : 'Detect Location'}
+                  </button>
+                ) : (
+                  <div className="w-full bg-[#3FB950]/10 border border-[#3FB950]/30 text-[#3FB950] rounded-xl p-3 flex items-center justify-center gap-2 text-sm">
+                    <CheckCircle className="w-4 h-4" /> {location || 'Location Secured'}
+                  </div>
+                )}
+              </div>
+              <Button type="submit" variant="primary" className="w-full mt-2 py-3" disabled={loading || !lat}>
                 {loading ? 'Processing...' : 'Register _'}
               </Button>
             </form>

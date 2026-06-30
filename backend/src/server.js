@@ -151,15 +151,17 @@ function calculateSynergy(u1, u2, distance_km) {
 
 // ---------------- AUTH ----------------
 app.post('/auth/signup', authLimiter, async (req, res) => {
-  const { email, password, name, public_key } = req.body;
+  const { email, password, name, public_key, lat, lng, location } = req.body;
   if (!email || !password || !name) return res.status(400).json({ error: 'Email, password, and name are required' });
+  if (lat === undefined || lng === undefined) return res.status(400).json({ error: 'Location tracking is mandatory to join HackMatch' });
+
   try {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ error: 'Email already exists' });
 
     const hash = bcrypt.hashSync(password, 10);
     const user = await User.create({
-      email, password: hash, name, bio: 'Ready to build something awesome.', skills: '[]', role: 'Developer', public_key: public_key || null
+      email, password: hash, name, bio: 'Ready to build something awesome.', skills: '[]', role: 'Developer', public_key: public_key || null, lat, lng, location: location || ''
     });
 
     const token = jwt.sign({ id: user._id, email }, JWT_SECRET, { expiresIn: '7d' });
