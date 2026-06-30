@@ -18,6 +18,9 @@ export default function ChatPage() {
   const [activeChat, setActiveChat] = useState<any>(targetUser || null);
   const [sharedSecret, setSharedSecret] = useState<CryptoKey | null>(null);
   const [showSidebar, setShowSidebar] = useState(!targetUser);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
 
   const [clashes, setClashes] = useState<any[]>([]);
   const [clashCode, setClashCode] = useState('');
@@ -111,9 +114,9 @@ export default function ChatPage() {
         const decryptedMsgs = await Promise.all(data.map(async (msg: any) => {
           try {
             const dec = await decryptMessage(msg.content, sharedSecret);
-            return { ...msg, content: dec };
+            return { ...msg, content: dec, failed: dec === '[Encrypted message - Decryption failed]' };
           } catch(e) {
-             return { ...msg, content: '[Failed to decrypt]' };
+             return { ...msg, content: '[Encrypted message - Decryption failed]', failed: true };
           }
         }));
         setMessages(decryptedMsgs);
@@ -157,6 +160,10 @@ export default function ChatPage() {
   const hasTheySubmitted = clashes.some(c => c.user_id === activeChat?.user_id);
   const gateOpen = hasISubmitted && hasTheySubmitted;
 
+  const filteredConnections = connections.filter(conn => 
+    conn.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (!user) return <div className="p-8 text-center mt-16 text-gray-500">Please sign in to access terminal.</div>;
 
   return (
@@ -166,29 +173,57 @@ export default function ChatPage() {
       
       {/* Activity Bar — always visible on desktop, hidden on mobile when chat is open */}
       <div className={`w-10 sm:w-12 border-r border-[#30363D] flex-col items-center py-4 bg-[#010409] shrink-0 ${!showSidebar && activeChat ? 'hidden md:flex' : 'flex'}`}>
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#C9D1D9] bg-[#1F6FEB]/20 border-l-2 border-[#58A6FF] text-sm">
+        <div 
+          onClick={() => { setShowSidebar(true); setShowSearch(false); }}
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center cursor-pointer text-sm ${!showSearch ? 'text-[#C9D1D9] bg-[#1F6FEB]/20 border-l-2 border-[#58A6FF]' : 'text-[#8B949E] hover:text-[#C9D1D9]'}`}
+        >
           <FileText className="w-4 h-4" />
         </div>
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#8B949E] hover:text-[#C9D1D9] cursor-pointer text-sm">
+        <div 
+          onClick={() => { setShowSidebar(true); setShowSearch(true); }}
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center cursor-pointer text-sm ${showSearch ? 'text-[#C9D1D9] bg-[#1F6FEB]/20 border-l-2 border-[#58A6FF]' : 'text-[#8B949E] hover:text-[#C9D1D9]'}`}
+        >
           <Search className="w-4 h-4" />
         </div>
-        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#8B949E] hover:text-[#C9D1D9] cursor-pointer text-sm">
+        <div 
+          onClick={() => setShowSettings(true)}
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded mb-4 flex items-center justify-center text-[#8B949E] hover:text-[#C9D1D9] cursor-pointer text-sm mt-auto"
+        >
           <Settings className="w-4 h-4" />
         </div>
       </div>
 
       {/* Sidebar Explorer — full-screen on mobile when shown, fixed width on desktop */}
       <div className={`border-r border-[#30363D] flex-col ultra-glass ${showSidebar ? 'flex w-full md:w-64' : 'hidden md:flex md:w-64'} shrink-0 z-10`}>
-        <div className="px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#8B949E]">Explorer</div>
-        <div className="px-3 sm:px-4 py-1 text-xs font-bold flex items-center gap-1 cursor-pointer text-[#C9D1D9]">
-          <span>{'>'}</span> HACKMATCH_NETWORK
+        <div className="px-3 sm:px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#8B949E]">
+          {showSearch ? 'Search' : 'Explorer'}
         </div>
+        
+        {showSearch ? (
+          <div className="px-3 sm:px-4 py-2">
+            <input 
+              type="text" 
+              placeholder="Search connections..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#0D1117] border border-[#30363D] rounded px-2 py-1 text-xs text-[#C9D1D9] focus:outline-none focus:border-[#58A6FF]"
+              autoFocus
+            />
+          </div>
+        ) : (
+          <div className="px-3 sm:px-4 py-1 text-xs font-bold flex items-center gap-1 cursor-pointer text-[#C9D1D9]">
+            <span>{'>'}</span> HACKMATCH_NETWORK
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto mt-2">
-          {connections.length === 0 ? (
-            <p className="text-xs text-[#8B949E] px-6 sm:px-8 py-4">No connections established.</p>
+          {filteredConnections.length === 0 ? (
+            <p className="text-xs text-[#8B949E] px-6 sm:px-8 py-4">
+              {showSearch ? 'No matching connections.' : 'No connections established.'}
+            </p>
           ) : (
             <div className="space-y-0.5">
-              {connections.map(conn => (
+              {filteredConnections.map(conn => (
                 <button
                   key={conn.id}
                   onClick={() => selectChat(conn)}
@@ -255,9 +290,15 @@ export default function ChatPage() {
                               <span className={`${color} font-bold mr-1 sm:mr-2 text-glow`}>
                                 {isMe ? 'console.log(' : `${senderName.replace(/\s+/g, '_')} > `}
                               </span>
-                              <span className="text-white">
-                                {isMe ? `"${msg.content}");` : msg.content}
-                              </span>
+                              {msg.failed ? (
+                                <span className="text-red-400 font-bold bg-red-900/20 px-1 py-0.5 rounded">
+                                  [ENCRYPTION KEY LOST - MESSAGE UNRECOVERABLE]
+                                </span>
+                              ) : (
+                                <span className="text-white">
+                                  {isMe ? `"${msg.content}");` : msg.content}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -385,6 +426,39 @@ export default function ChatPage() {
           </div>
         )}
       </div>
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0D1117] border border-[#30363D] rounded-xl w-full max-w-md p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowSettings(false)}
+              className="absolute top-4 right-4 text-[#8B949E] hover:text-[#C9D1D9]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold text-[#C9D1D9] mb-4 flex items-center gap-2">
+              <Settings className="w-5 h-5 text-[#58A6FF]" /> Terminal Settings
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="bg-[#161B22] p-4 rounded-lg border border-[#30363D]">
+                <h4 className="text-sm font-bold text-[#C9D1D9] mb-1">E2E Encryption</h4>
+                <p className="text-xs text-[#8B949E] mb-3">Your messages are encrypted end-to-end. If you log out or clear your local storage, your private key is destroyed and old messages become unrecoverable.</p>
+                <div className="flex items-center gap-2 text-xs font-mono bg-black/50 p-2 rounded text-[#3FB950]">
+                  <Lock className="w-3 h-3" /> Keypair Active
+                </div>
+              </div>
+              
+              <div className="bg-[#161B22] p-4 rounded-lg border border-[#30363D]">
+                <h4 className="text-sm font-bold text-[#C9D1D9] mb-1">Theme</h4>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-6 h-6 rounded-full border-2 border-[#58A6FF] bg-[#0D1117]"></div>
+                  <span className="text-xs text-[#8B949E]">Deep Dark (Default)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
