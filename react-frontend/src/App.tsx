@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MeshBackground } from './components/layout/MeshBackground';
+
 import { MatrixBackground } from './components/ui/MatrixBackground';
 import { useAuth } from './store/useAuth';
 import API from './lib/api';
@@ -53,7 +53,7 @@ function NavBar() {
       <nav
         className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
           scrolled
-            ? 'bg-[#050508]/80 backdrop-blur-[20px] border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
+            ? 'bg-[#0D1117]/80 backdrop-blur-[20px] border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
             : 'bg-transparent border-transparent'
         } px-4 md:px-8 py-4 flex justify-between items-center`}
       >
@@ -235,7 +235,6 @@ function App() {
             Backend unreachable — check {import.meta.env.VITE_API_URL || 'API URL'}
           </div>
         )}
-        <MeshBackground />
         {godMode && <MatrixBackground />}
         <NavBar />
 

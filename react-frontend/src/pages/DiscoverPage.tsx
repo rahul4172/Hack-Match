@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../store/useAuth';
 import type { UserProfile } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
@@ -85,11 +85,14 @@ function SwipeCard({ item, isTop, onSwipe, currentUserLocation }: any) {
 
   return (
     <motion.div
+      layout
       drag={isTop ? true : false}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       onDragEnd={handleDragEnd}
       style={{ x, y, rotate }}
+      initial={{ scale: 0.8, opacity: 0, y: 50 }}
       animate={!isTop ? { scale: 0.95, opacity: 0.8, y: 10 } : { scale: 1, opacity: 1, y: 0 }}
+      exit={{ x: x.get() > 0 ? 300 : -300, opacity: 0, rotate: x.get() > 0 ? 15 : -15 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={`absolute inset-0 w-full h-full bg-[#0D1117] rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col ${isTop ? 'z-10 cursor-grab active:cursor-grabbing' : 'z-0 pointer-events-none'}`}
     >
@@ -348,20 +351,22 @@ export default function DiscoverPage() {
         ) : currentIndex < users.length ? (
           <div className="w-full h-full flex flex-col items-center justify-center pt-2 pb-6">
             <div className="relative w-[95%] max-w-[400px] flex-1 min-h-[400px] mb-6 perspective-1000">
-              {users.slice(currentIndex, currentIndex + 2).reverse().map((item, i, arr) => {
-                const isTop = i === arr.length - 1;
-                return (
-                  <SwipeCard
-                    key={(item as any).id + i}
-                    item={item}
-                    isTop={isTop}
-                    onSwipe={onSwipe}
-                    calculateLevelData={calculateLevelData}
-                    generateBadges={generateBadges}
-                    currentUserLocation={(user as any)?.location}
-                  />
-                );
-              })}
+              <AnimatePresence>
+                {users.slice(currentIndex, currentIndex + 2).reverse().map((item, i, arr) => {
+                  const isTop = i === arr.length - 1;
+                  return (
+                    <SwipeCard
+                      key={(item as any).id + i}
+                      item={item}
+                      isTop={isTop}
+                      onSwipe={onSwipe}
+                      calculateLevelData={calculateLevelData}
+                      generateBadges={generateBadges}
+                      currentUserLocation={(user as any)?.location}
+                    />
+                  );
+                })}
+              </AnimatePresence>
             </div>
             
             <div className="text-slate-500 text-xs font-medium flex items-center justify-center gap-2 mt-4 px-4 py-2 bg-white/5 rounded-full border border-white/5 shadow-inner">

@@ -139,24 +139,20 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D1117] text-[#C9D1D9] selection:bg-white/20 overflow-x-hidden font-sans">
+    <div className="bg-transparent text-[#C9D1D9] selection:bg-white/20 overflow-x-hidden font-sans">
       
-      {/* Background Noise & Clean Lines */}
-      <div className="fixed inset-0 pointer-events-none z-0 noise-overlay opacity-30"></div>
-      <div className="fixed inset-0 pointer-events-none z-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-
       {/* --- HERO SECTION --- */}
-      <section className="relative min-h-screen flex flex-col md:flex-row items-center justify-center px-6 lg:px-20 z-10 max-w-7xl mx-auto gap-12 lg:gap-24 pt-20 pb-10">
+      <section className="relative h-[100vh] min-h-[600px] flex flex-col md:flex-row items-center justify-center px-6 lg:px-20 z-10 max-w-7xl mx-auto gap-8 lg:gap-16 pt-24 pb-8">
         
         {/* Left: Copy */}
         <div className="flex-1 flex flex-col items-start text-left max-w-2xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 mb-8"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 mb-6"
           >
-            <Zap className="w-4 h-4 text-white" />
-            <span className="text-xs font-mono font-bold tracking-widest text-white uppercase">
+            <Zap className="w-3.5 h-3.5 text-white" />
+            <span className="text-[10px] font-mono font-bold tracking-widest text-white uppercase">
               Tinder for Hackathons
             </span>
           </motion.div>
@@ -165,10 +161,10 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-6xl sm:text-7xl lg:text-8xl font-black tracking-tight text-white mb-6 leading-[1.1]"
+            className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-4 leading-[1.1]"
           >
             Find your next <br />
-            <span className="text-white/50 border-b-4 border-white/20 pb-2 inline-block min-w-[200px]">
+            <span className="text-white/50 border-b-2 border-white/20 pb-1 inline-block min-w-[200px]">
               {scrambleWord}
             </span>
           </motion.h1>
@@ -177,7 +173,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl sm:text-2xl text-[#8B949E] mb-10 leading-relaxed max-w-lg"
+            className="text-lg sm:text-xl text-[#8B949E] mb-8 leading-relaxed max-w-md"
           >
             Stop scrolling Discord. Swipe to find developers, designers, and builders based on their tech stack.
           </motion.p>
@@ -191,9 +187,9 @@ export default function LandingPage() {
             <Button 
               size="lg" 
               onClick={() => user ? navigate('/discover') : navigate('/signup')}
-              className="w-full sm:w-auto bg-white text-black hover:bg-gray-200 font-bold px-10 py-4 h-auto text-lg rounded-full flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-white text-black hover:bg-gray-200 font-bold px-8 py-3 h-auto text-base rounded-full flex items-center justify-center gap-2"
             >
-              Start Swiping <ArrowRight className="w-5 h-5" />
+              Start Swiping <ArrowRight className="w-4 h-4" />
             </Button>
             
             {!user && (
@@ -202,7 +198,7 @@ export default function LandingPage() {
                 size="lg"
                 onClick={handleGuestLogin}
                 disabled={loadingGuest}
-                className="w-full sm:w-auto font-mono uppercase tracking-widest text-sm text-[#8B949E] hover:text-white px-8"
+                className="w-full sm:w-auto font-mono uppercase tracking-widest text-xs text-[#8B949E] hover:text-white px-6"
               >
                 {loadingGuest ? 'Loading...' : 'Try as Guest'}
               </Button>
@@ -215,7 +211,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4, type: 'spring' }}
-          className="flex-1 w-full flex justify-center lg:justify-end mt-10 md:mt-0"
+          className="flex-1 w-full flex justify-center lg:justify-end mt-4 md:mt-0 scale-90 lg:scale-100 origin-right"
         >
           <AutoSwipeDeck />
         </motion.div>
