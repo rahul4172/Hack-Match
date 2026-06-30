@@ -14,6 +14,7 @@ export interface UserProfile {
   linkedin?: string;
   avatar?: string;
   public_key?: string;
+  location?: string;
   synergy_score?: number;
 }
 
