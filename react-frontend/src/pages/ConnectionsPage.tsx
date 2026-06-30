@@ -252,7 +252,7 @@ export default function ConnectionsPage() {
                 <h2 className="text-xl font-bold text-white">Create Squad</h2>
                 <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
               </div>
-              <div className="space-y-4">
+              <form className="space-y-4" onSubmit={handleCreateSquad}>
                 <div>
                   <label className="block text-xs font-mono text-slate-400 mb-1">Squad Name</label>
                   <input required type="text" value={createData.name} onChange={e => setCreateData({...createData, name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="e.g. The Try Catchers" />
@@ -261,8 +261,8 @@ export default function ConnectionsPage() {
                   <label className="block text-xs font-mono text-slate-400 mb-1">Target Hackathon</label>
                   <input required type="text" value={createData.hackathon_name} onChange={e => setCreateData({...createData, hackathon_name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="e.g. ISRO Hackathon" />
                 </div>
-                <Button variant="primary" type="button" onClick={handleCreateSquad} className="w-full mt-4">Create & Get Code</Button>
-              </div>
+                <Button variant="primary" type="submit" className="w-full mt-4" disabled={!createData.name || !createData.hackathon_name}>Create & Get Code</Button>
+              </form>
             </motion.div>
           </motion.div>
         )}
@@ -277,13 +277,13 @@ export default function ConnectionsPage() {
                 <h2 className="text-xl font-bold text-white">Join Squad</h2>
                 <button onClick={() => setShowJoinModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
               </div>
-              <div className="space-y-4">
+              <form className="space-y-4" onSubmit={handleJoinSquad}>
                 <div>
                   <label className="block text-xs font-mono text-slate-400 mb-1">6-Character Join Code</label>
                   <input required type="text" maxLength={6} value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono tracking-widest text-center focus:outline-none focus:border-[#58A6FF]" placeholder="e.g. XJ9K1M" />
                 </div>
-                <Button variant="primary" type="button" onClick={handleJoinSquad} className="w-full mt-4">Join Squad</Button>
-              </div>
+                <Button variant="primary" type="submit" className="w-full mt-4" disabled={!joinCode}>Join Squad</Button>
+              </form>
             </motion.div>
           </motion.div>
         )}
