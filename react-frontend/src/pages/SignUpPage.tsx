@@ -79,7 +79,7 @@ export default function SignUpPage() {
     try {
       const formData = new FormData();
       formData.append('image', avatarFile);
-      const imgRes = await fetch('https://api.imgbb.com/1/upload?key=6e321a8fb1d21d1721f2918ccfbccac6', {
+      const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`, {
         method: 'POST',
         body: formData
       });
