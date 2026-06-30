@@ -18,6 +18,8 @@ export default function SignUpPage() {
   const [lng, setLng] = useState<number | null>(null);
   const [location, setLocation] = useState('');
   const [locLoading, setLocLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -52,14 +54,44 @@ export default function SignUpPage() {
     });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (lat === null || lng === null) {
       setError('Location tracking is mandatory to join HackMatch');
       return;
     }
+    if (!avatarFile) {
+      setError('Profile picture is mandatory to join HackMatch');
+      return;
+    }
     setError('');
     setLoading(true);
+    
+    let avatarUrl = '';
+    try {
+      const formData = new FormData();
+      formData.append('image', avatarFile);
+      const imgRes = await fetch('https://api.imgbb.com/1/upload?key=6e321a8fb1d21d1721f2918ccfbccac6', {
+        method: 'POST',
+        body: formData
+      });
+      const imgData = await imgRes.json();
+      if (!imgData.success) throw new Error('Failed to upload image');
+      avatarUrl = imgData.data.url;
+    } catch (err) {
+      setError('Image upload failed. Try a different image or check connection.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const keyPair = await generateKeyPair();
       const pubKey = await exportPublicKey(keyPair.publicKey);
@@ -67,7 +99,7 @@ export default function SignUpPage() {
 
       const res = await fetchAPI('/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ email, password, name, public_key: pubKey, lat, lng, location }),
+        body: JSON.stringify({ email, password, name, public_key: pubKey, lat, lng, location, avatar: avatarUrl }),
       });
       localStorage.setItem('token', res.token);
       localStorage.setItem('private_key', privKey);
@@ -121,6 +153,17 @@ export default function SignUpPage() {
                   className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#BC8CFF]/50 transition-all text-sm"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-mono text-[#8B949E] mb-1.5">Profile Picture (Required)</label>
+                <div className="flex items-center gap-4 bg-black/40 border border-white/10 rounded-xl p-3">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="preview" className="w-10 h-10 rounded-full object-cover border border-[#58A6FF]" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-[#8B949E]">Pic</div>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="text-sm text-[#8B949E] file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#58A6FF]/10 file:text-[#58A6FF] hover:file:bg-[#58A6FF]/20" required />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-mono text-[#8B949E] mb-1.5">Password</label>
