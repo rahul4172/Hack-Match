@@ -273,8 +273,17 @@ app.get('/users', authenticate, async (req, res) => {
 
     withSynergy.sort((a, b) => b.synergy_score - a.synergy_score);
 
-    const ideas = await Idea.find({ creator_id: { $ne: req.user.id }, status: 'active' }).populate('creator_id');
-    const formattedIdeas = ideas.map(i => {
+    const ideaQuery: any = { creator_id: { $ne: req.user.id }, status: 'active' };
+    if (search) {
+      ideaQuery.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { pitch: { $regex: search, $options: 'i' } },
+        { roles_needed: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const ideas = await Idea.find(ideaQuery).populate('creator_id');
+    const formattedIdeas = ideas.filter(i => i.creator_id).map(i => {
       const iObj = i.toJSON();
       if (i.creator_id) {
         iObj.creator_name = i.creator_id.name;
