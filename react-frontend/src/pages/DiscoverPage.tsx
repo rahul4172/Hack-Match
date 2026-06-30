@@ -5,7 +5,8 @@ import type { UserProfile } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
-import { Lightbulb, Code2, Star, Box, Flame, Search, Heart, User, Check, Zap } from 'lucide-react';
+import { Lightbulb, Code2, Search, Heart, User, Check, Zap, Target } from 'lucide-react';
+import { calculateLevelData, generateBadges } from '../lib/gamification';
 
 // --- Filter Component ---
 function FilterSidebar({
@@ -54,13 +55,15 @@ function FilterSidebar({
 }
 
 // --- Tinder Swipe Card Component ---
-function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge, currentUserLocation }: any) {
+function SwipeCard({ item, isTop, onSwipe, currentUserLocation }: any) {
   const isIdea = item.type === 'idea';
   const u = item;
   let skills: string[] = [];
   try { skills = JSON.parse(u.skills || '[]'); } catch (e) {}
 
-  const badge = !isIdea ? getHackScoreBadge(u.hack_score || 0) : null;
+  const stats = !isIdea ? calculateLevelData(u.hack_score || 0) : null;
+  const badges = !isIdea ? generateBadges(u) : [];
+  
   const distance = u.distance_km;
   const isNearYouTextMatch = !distance && currentUserLocation && u.location && (
     u.location.toLowerCase().includes(currentUserLocation.toLowerCase()) || 
@@ -120,8 +123,8 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge, currentUserLocatio
           <div>
             <h2 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md flex-wrap">
               {isIdea ? u.title : `${u.name}, ${Math.floor(Math.random() * 6) + 18}`}
-              {badge && (
-                <span className={`text-[10px] px-2 py-1 rounded-full border font-mono font-bold ${badge.color}`}>{badge.label}</span>
+              {!isIdea && stats && (
+                <span className={`text-[10px] px-2 py-1 rounded-full border font-mono font-bold ${stats.rankColor} ${stats.rankBorder} ${stats.rankBg}`}>{stats.rank}</span>
               )}
               {distance !== undefined && distance !== null ? (
                 <span className="text-[10px] px-2 py-1 rounded-full border font-mono font-bold text-red-400 border-red-400/50 bg-red-400/10 flex items-center gap-1">📍 {distance} km away</span>
@@ -138,11 +141,15 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge, currentUserLocatio
 
       {/* Info Area */}
       <div className="p-6 flex-1 overflow-y-auto custom-scrollbar bg-[#0D1117]">
-        {!isIdea && (
+        {!isIdea && stats && (
           <div className="flex gap-4 font-mono text-xs mb-6 text-[#C9D1D9] border-b border-white/5 pb-4">
-            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Star className="w-4 h-4 text-yellow-500" /> {Math.floor(Math.random() * 300) + 10}</span>Stars</div>
-            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Box className="w-4 h-4 text-purple-400" /> {Math.floor(Math.random() * 50) + 5}</span>Repos</div>
-            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Flame className="w-4 h-4 text-orange-500" /> {Math.floor(Math.random() * 100)}</span>Streak</div>
+            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Target className={`w-4 h-4 ${stats.rankColor}`} /> Lvl {stats.level}</span>XP {stats.xp.toLocaleString()}</div>
+            {badges.slice(0, 2).map((b: any) => {
+              const Icon = b.icon;
+              return (
+                <div key={b.id} className="flex flex-col items-center gap-1"><span className={`flex items-center gap-1 font-bold text-white text-lg`}><Icon className={`w-4 h-4 ${b.color}`} /> {b.label.split(' ')[0]}</span>Badge</div>
+              );
+            })}
           </div>
         )}
 
@@ -251,12 +258,7 @@ export default function DiscoverPage() {
     }
   };
 
-  const getHackScoreBadge = (score: number) => {
-    if (score >= 2000) return { label: 'Legendary', color: 'text-yellow-400 border-yellow-400/50 bg-yellow-400/10' };
-    if (score >= 1000) return { label: 'Elite', color: 'text-purple-400 border-purple-400/50 bg-purple-400/10' };
-    if (score >= 500) return { label: 'Pro', color: 'text-blue-400 border-blue-400/50 bg-blue-400/10' };
-    return { label: 'Spark', color: 'text-gray-400 border-gray-400/50 bg-gray-400/10' };
-  };
+
 
   const handleConnect = async (receiverId: string) => {
     try {
@@ -354,7 +356,8 @@ export default function DiscoverPage() {
                     item={item}
                     isTop={isTop}
                     onSwipe={onSwipe}
-                    getHackScoreBadge={getHackScoreBadge}
+                    calculateLevelData={calculateLevelData}
+                    generateBadges={generateBadges}
                     currentUserLocation={(user as any)?.location}
                   />
                 );

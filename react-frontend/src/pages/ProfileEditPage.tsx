@@ -4,10 +4,14 @@ import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
-import { User, Trophy, Flame, Bug, MapPin } from 'lucide-react';
+import { User, MapPin } from 'lucide-react';
+import { calculateLevelData, generateBadges } from '../lib/gamification';
 
 export default function ProfileEditPage() {
   const { user, updateProfile } = useAuth();
+  
+  const stats = calculateLevelData(user?.hack_score || 0);
+  const badges = generateBadges(user || {});
   
   const [formData, setFormData] = useState({
     name: '',
@@ -151,39 +155,38 @@ export default function ProfileEditPage() {
              </div>
            </div>
            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#3FB950] text-[#0D1117] font-bold text-xs px-3 py-1 rounded-full uppercase tracking-widest whitespace-nowrap shadow-[0_0_15px_rgba(63,185,80,0.5)]">
-             Level 42
+             Level {stats.level}
            </div>
         </div>
 
         <div className="flex-1 w-full">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 font-mono gap-1">
             <h2 className="text-xl sm:text-2xl font-bold text-white text-glow">{formData.name || 'Anonymous User'}</h2>
-            <div className="text-xs text-[#8B949E]">Rank: <span className="text-[#BC8CFF] text-glow">Architect</span></div>
+            <div className="text-xs text-[#8B949E]">Rank: <span className={`${stats.rankColor} text-glow`}>{stats.rank}</span></div>
           </div>
           
           <div className="mb-1 flex justify-between text-xs text-[#8B949E] font-mono">
-            <span>XP: 8,450</span>
-            <span>Next Level: 10,000</span>
+            <span>XP: {stats.xp.toLocaleString()}</span>
+            <span>Next Level: {stats.nextLevelXP.toLocaleString()}</span>
           </div>
           <div className="w-full bg-[#010409] rounded-full h-2.5 mb-5 sm:mb-6 border border-white/5 relative overflow-hidden">
-            <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#58A6FF] to-[#BC8CFF] h-2.5 rounded-full shadow-[0_0_15px_rgba(88,166,255,0.8)]" style={{ width: '84.5%' }}></div>
+            <div className={`absolute inset-y-0 left-0 bg-gradient-to-r from-[#58A6FF] to-current ${stats.rankColor} h-2.5 rounded-full`} style={{ width: `${stats.progressPercent}%`, boxShadow: '0 0 15px currentColor' }}></div>
           </div>
 
           <div>
             <h3 className="text-xs uppercase tracking-wider text-[#8B949E] mb-2 font-bold">Unlocked Badges</h3>
             <div className="flex flex-wrap gap-3">
-              <div className="flex flex-col items-center group cursor-pointer">
-                <span className="p-2 rounded-full bg-yellow-500/10 text-yellow-500 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] transform group-hover:scale-110 transition-transform"><Trophy className="w-5 h-5" /></span>
-                <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Hackathon Winner</span>
-              </div>
-              <div className="flex flex-col items-center group cursor-pointer">
-                <span className="p-2 rounded-full bg-[#58A6FF]/10 text-[#58A6FF] drop-shadow-[0_0_15px_rgba(88,166,255,0.8)] transform group-hover:scale-110 transition-transform"><Flame className="w-5 h-5" /></span>
-                <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">7 Day Streak</span>
-              </div>
-              <div className="flex flex-col items-center group cursor-pointer">
-                <span className="p-2 rounded-full bg-[#3FB950]/10 text-[#3FB950] drop-shadow-[0_0_15px_rgba(63,185,80,0.8)] transform group-hover:scale-110 transition-transform"><Bug className="w-5 h-5" /></span>
-                <span className="text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Bug Hunter</span>
-              </div>
+              {badges.map((badge) => {
+                const Icon = badge.icon;
+                return (
+                  <div key={badge.id} className="flex flex-col items-center group cursor-pointer relative z-10">
+                    <span className={`p-2 rounded-full ${badge.bgColor} ${badge.color} transform group-hover:scale-110 transition-transform`} style={{ filter: `drop-shadow(0 0 10px ${badge.shadowColor})` }}>
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    <span className="absolute -bottom-5 text-[10px] text-gray-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{badge.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

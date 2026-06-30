@@ -19,6 +19,7 @@ export interface UserProfile {
   lng?: number;
   distance_km?: number;
   synergy_score?: number;
+  hack_score?: number;
 }
 
 interface AuthState {
