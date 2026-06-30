@@ -752,6 +752,53 @@ app.get('/squads', authenticate, async (req, res) => {
   }
 });
 
+app.put('/squads/:id/rename', authenticate, async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Invalid squad ID' });
+    const squad = await Squad.findById(req.params.id);
+    if (!squad) return res.status(404).json({ error: 'Squad not found' });
+    if (squad.creator_id.toString() !== req.user.id) return res.status(403).json({ error: 'Only the creator can rename the squad' });
+    
+    squad.name = name;
+    await squad.save();
+    res.json(squad.toJSON());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/squads/:id/leave', authenticate, async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Invalid squad ID' });
+    const squad = await Squad.findById(req.params.id);
+    if (!squad) return res.status(404).json({ error: 'Squad not found' });
+    if (squad.creator_id.toString() === req.user.id) return res.status(400).json({ error: 'The creator cannot leave the squad. Disband it instead.' });
+    if (!squad.members.includes(req.user.id)) return res.status(400).json({ error: 'You are not in this squad' });
+    
+    squad.members = squad.members.filter(mId => mId.toString() !== req.user.id);
+    await squad.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/squads/:id', authenticate, async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Invalid squad ID' });
+    const squad = await Squad.findById(req.params.id);
+    if (!squad) return res.status(404).json({ error: 'Squad not found' });
+    if (squad.creator_id.toString() !== req.user.id) return res.status(403).json({ error: 'Only the creator can disband the squad' });
+    
+    await Squad.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/', (req, res) => {
   res.json({ message: 'HackMatch API is running' });
 });

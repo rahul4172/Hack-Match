@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin, Users, Plus, LogIn, Copy, X } from 'lucide-react';
+import { User, MapPin, Users, Plus, LogIn, Copy, X, Trash2, LogOut, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ConnectionsPage() {
@@ -75,10 +75,41 @@ export default function ConnectionsPage() {
       setShowJoinModal(false);
       setJoinCode('');
       loadConnections();
-      alert(`✅ Successfully joined squad: ${response.name}!`);
+      alert('Successfully joined squad!');
+      loadConnections();
     } catch (err: any) {
-      console.error(err);
       alert(err.message || 'Failed to join squad');
+    }
+  };
+
+  const handleRenameSquad = async (squadId: string, currentName: string) => {
+    const newName = prompt('Enter new squad name:', currentName);
+    if (!newName || newName === currentName) return;
+    try {
+      await fetchAPI(`/squads/${squadId}/rename`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+      loadConnections();
+    } catch (err: any) {
+      alert(err.message || 'Failed to rename squad');
+    }
+  };
+
+  const handleLeaveSquad = async (squadId: string) => {
+    if (!confirm('Are you sure you want to leave this squad?')) return;
+    try {
+      await fetchAPI(`/squads/${squadId}/leave`, { method: 'POST' });
+      loadConnections();
+    } catch (err: any) {
+      alert(err.message || 'Failed to leave squad');
+    }
+  };
+
+  const handleDisbandSquad = async (squadId: string) => {
+    if (!confirm('Are you sure you want to disband this squad? This action cannot be undone.')) return;
+    try {
+      await fetchAPI(`/squads/${squadId}`, { method: 'DELETE' });
+      loadConnections();
+    } catch (err: any) {
+      alert(err.message || 'Failed to disband squad');
     }
   };
 
@@ -138,6 +169,24 @@ export default function ConnectionsPage() {
                         </div>
                       </div>
                       
+                      {/* SQUAD ACTIONS */}
+                      <div className="flex gap-2 justify-end -mt-2">
+                        {squad.creator_id === user?.id ? (
+                          <>
+                            <button onClick={() => handleRenameSquad(squad.id, squad.name)} className="text-[#8B949E] hover:text-white transition-colors" title="Rename Squad">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDisbandSquad(squad.id)} className="text-[#8B949E] hover:text-red-400 transition-colors" title="Disband Squad">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => handleLeaveSquad(squad.id)} className="text-[#8B949E] hover:text-red-400 transition-colors" title="Leave Squad">
+                            <LogOut className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
                       <div className="mt-auto">
                         <p className="text-xs text-[#8B949E] mb-2 font-mono">Members ({squad.members?.length || 0})</p>
                         <div className="flex flex-wrap gap-2">
