@@ -303,6 +303,14 @@ app.put('/users/profile', authenticate, async (req, res) => {
   }
 });
 
+app.get('/users/nearby', authenticate, (req, res) => {
+  res.json([
+    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Sarah Chen', role: 'Full Stack Engineer', bio: 'Building scalable web apps. Looking for a weekend hackathon team!', avatar: 'https://i.pravatar.cc/150?u=sarah', location: 'San Francisco, CA (2 miles away)', tech_stack: ['React', 'TypeScript', 'Node.js'] },
+    { id: new mongoose.Types.ObjectId().toHexString(), name: 'David Kumar', role: 'AI / ML Researcher', bio: "Training tiny LLMs on edge devices. Let's build the next AI agent.", avatar: 'https://i.pravatar.cc/150?u=david', location: 'San Francisco, CA (5 miles away)', tech_stack: ['Python', 'PyTorch', 'C++'] },
+    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Elena Rodriguez', role: 'Product Designer', bio: 'UI/UX enthusiast. I make things look pretty and user-friendly.', avatar: 'https://i.pravatar.cc/150?u=elena', location: 'San Jose, CA (40 miles away)', tech_stack: ['Figma', 'Framer', 'CSS'] },
+  ]);
+});
+
 app.get('/users/:id', authenticate, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(404).json({ error: 'Invalid user ID' });
@@ -315,14 +323,6 @@ app.get('/users/:id', authenticate, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
-
-app.get('/users/nearby', authenticate, (req, res) => {
-  res.json([
-    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Sarah Chen', role: 'Full Stack Engineer', bio: 'Building scalable web apps. Looking for a weekend hackathon team!', avatar: 'https://i.pravatar.cc/150?u=sarah', location: 'San Francisco, CA (2 miles away)', tech_stack: ['React', 'TypeScript', 'Node.js'] },
-    { id: new mongoose.Types.ObjectId().toHexString(), name: 'David Kumar', role: 'AI / ML Researcher', bio: "Training tiny LLMs on edge devices. Let's build the next AI agent.", avatar: 'https://i.pravatar.cc/150?u=david', location: 'San Francisco, CA (5 miles away)', tech_stack: ['Python', 'PyTorch', 'C++'] },
-    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Elena Rodriguez', role: 'Product Designer', bio: 'UI/UX enthusiast. I make things look pretty and user-friendly.', avatar: 'https://i.pravatar.cc/150?u=elena', location: 'San Jose, CA (40 miles away)', tech_stack: ['Figma', 'Framer', 'CSS'] },
-  ]);
 });
 
 // ---------------- IDEAS & SIGNALS ----------------
