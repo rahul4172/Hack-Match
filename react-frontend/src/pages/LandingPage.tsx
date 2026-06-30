@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform, useInView, useSpring } from 'framer-motion';
-import { Search, Radar, MessageSquare, Sparkles, Shield, CheckCircle2, Star, Cpu, ArrowRight, Code2, X, Heart } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Search, Sparkles, Cpu, ArrowRight, Heart, Globe, Users, Trophy } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../store/useAuth';
 import { useMousePosition } from '../hooks/useMousePosition';
 import { fetchAPI } from '../lib/api';
 import { CursorSpotlight } from '../components/layout/MeshBackground';
 
-// -- 1. Signature Moment: Scramble Text (Hero)
+// -- Scramble Text Effect (Hero) --
 const SCRAMBLE_CHARS = '!<>-_\\\\/[]{}—=+*^?#________';
 const useScrambleText = (words: string[]) => {
   const [index, setIndex] = useState(0);
@@ -40,331 +40,331 @@ const useScrambleText = (words: string[]) => {
   return text;
 };
 
-// -- 2. Signature Moment: Animated Count Up (Stats)
-const AnimatedNumber = ({ value, duration = 2 }: { value: number, duration?: number }) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
-  const spring = useSpring(0, { duration: duration * 1000, bounce: 0 });
-  const [display, setDisplay] = useState(0);
+// -- Magnetic Button Component --
+function MagneticButton({ children, onClick, className = '' }: any) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    if (isInView) spring.set(value);
-  }, [isInView, spring, value]);
+  const handleMouse = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current!.getBoundingClientRect();
+    const middleX = clientX - (left + width / 2);
+    const middleY = clientY - (top + height / 2);
+    setPosition({ x: middleX * 0.2, y: middleY * 0.2 });
+  };
 
-  useEffect(() => {
-    return spring.on("change", (latest) => {
-      setDisplay(Math.floor(latest));
-    });
-  }, [spring]);
+  const reset = () => {
+    setPosition({ x: 0, y: 0 });
+  };
 
-  return <span ref={ref}>{display}</span>;
-};
+  return (
+    <motion.button
+      ref={ref}
+      onMouseMove={handleMouse}
+      onMouseLeave={reset}
+      onClick={onClick}
+      animate={{ x: position.x, y: position.y }}
+      transition={{ type: 'spring', stiffness: 150, damping: 15, mass: 0.1 }}
+      className={`relative inline-flex items-center justify-center gap-2 group px-8 py-4 rounded-full font-bold text-white transition-colors z-50 ${className}`}
+    >
+      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#58A6FF] to-[#BC8CFF] opacity-80 blur-md transition-opacity group-hover:opacity-100 animate-spin-border"></div>
+      <div className="absolute inset-[1px] rounded-full bg-[#0D1117] transition-colors group-hover:bg-[#161B22]"></div>
+      <span className="relative flex items-center gap-2 z-10 font-mono tracking-widest uppercase">
+        {children}
+      </span>
+    </motion.button>
+  );
+}
 
-// -- 3. Signature Moment: Card Tilt
-const TiltCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
+// -- Bento Card Component (Mouse Tracking Gradient) --
+function BentoCard({ children, className = '' }: any) {
   const ref = useRef<HTMLDivElement>(null);
-  const [style, setStyle] = useState({});
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    
-    const rotateX = ((y - centerY) / centerY) * -8;
-    const rotateY = ((x - centerX) / centerX) * 8;
-    
-    setStyle({
-      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
-      transition: 'transform 0.1s ease-out'
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
     });
   };
 
-  const handleMouseLeave = () => {
-    setStyle({ transform: `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`, transition: 'transform 0.5s ease-out' });
-  };
-
   return (
-    <div ref={ref} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} style={style} className={`glass-card ${className}`}>
-      {children}
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      className={`bento-card p-8 flex flex-col justify-between ${className}`}
+      style={{
+        '--mouse-x': `${mousePosition.x}px`,
+        '--mouse-y': `${mousePosition.y}px`,
+      } as React.CSSProperties}
+    >
+      <div className="relative z-10 h-full flex flex-col">
+        {children}
+      </div>
     </div>
   );
-};
+}
+
+// -- Hero Floating Card Mockup --
+function FloatingMockupCard({ delay, rotate, x, y, name, role, avatar, badge }: any) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, scale: 0.8 }}
+      animate={{ opacity: 1, y, x, rotate, scale: 1 }}
+      transition={{ duration: 1, delay, type: 'spring', bounce: 0.4 }}
+      className={`absolute w-64 p-4 rounded-2xl glass-card border border-white/10 shadow-2xl backdrop-blur-2xl bg-[#0D1117]/80 hidden md:block ${delay % 2 === 0 ? 'animate-float-slow' : 'animate-float-slower'}`}
+      style={{ zIndex: 10 + Math.floor(delay * 10) }}
+    >
+      <div className="flex gap-3 items-center mb-3">
+        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#58A6FF]/50 shrink-0 shadow-[0_0_15px_rgba(88,166,255,0.3)]">
+          <img src={avatar} alt="avatar" className="w-full h-full object-cover" />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-white leading-tight">{name}</h4>
+          <p className="text-[10px] text-[#8B949E] font-mono mt-0.5">{role}</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <span className={`text-[9px] px-2 py-0.5 rounded-full border ${badge.color}`}>{badge.text}</span>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function LandingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const mouse = useMousePosition();
   const [loadingGuest, setLoadingGuest] = useState(false);
-  const scrambleText = useScrambleText(['Find Your Squad.', 'Ship Faster.', 'Win Together.']);
-  
-  const { scrollYProgress } = useScroll();
-  const yHero = useTransform(scrollYProgress, [0, 1], [0, 300]);
+  const scrambleWord = useScrambleText(['Squad', 'Team', 'Co-Founder', 'Partner']);
 
-  const handleGuest = async () => {
+  const { scrollYProgress } = useScroll();
+  const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
+
+  const handleGuestLogin = async () => {
     setLoadingGuest(true);
     try {
-      const res = await fetchAPI('/auth/guest', { method: 'POST' });
-      useAuth.getState().signIn(res.token, res.user);
-      navigate('/discover');
-    } catch (e) { console.error(e); }
-    finally { setLoadingGuest(false); }
+      const res = await fetchAPI('/auth/guest-login', { method: 'POST' });
+      localStorage.setItem('token', res.token);
+      window.location.href = '/discover';
+    } catch (err: any) {
+      alert("Guest login failed: " + err.message);
+    } finally {
+      setLoadingGuest(false);
+    }
   };
 
-  const fadeUpVariant = {
-    hidden: { opacity: 0, y: 24 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const } }
-  };
-
-  const containerVariant = {
-    visible: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } }
+  const TechMarquee = () => {
+    const tech = ['React', 'Next.js', 'Tailwind', 'Node.js', 'Python', 'TypeScript', 'GraphQL', 'PostgreSQL', 'MongoDB', 'Docker', 'AWS', 'Framer Motion'];
+    return (
+      <div className="w-full overflow-hidden py-10 rotate-[-2deg] scale-110 bg-[#BC8CFF]/5 border-y border-[#BC8CFF]/10 backdrop-blur-sm relative z-0">
+        <div className="flex whitespace-nowrap animate-marquee">
+          {[...tech, ...tech, ...tech].map((t, i) => (
+            <span key={i} className="mx-8 text-2xl font-bold font-display text-transparent bg-clip-text bg-gradient-to-r from-white/20 to-white/5 uppercase tracking-widest opacity-50">
+              {t} <span className="text-[#BC8CFF]/30 mx-4">•</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="relative noise-overlay text-[var(--text-primary)]">
+    <div className="min-h-screen bg-[#010409] text-[#C9D1D9] selection:bg-[#BC8CFF]/30 overflow-x-hidden">
       <CursorSpotlight x={mouse.x} y={mouse.y} />
+      
+      {/* Background Gradients */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#58A6FF]/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#BC8CFF]/10 blur-[120px]" />
+      </div>
 
-      {/* 1. HERO SECTION */}
-      <section className="min-h-[100svh] flex flex-col items-center justify-center section-padding pt-32 pb-16 text-center relative overflow-hidden">
-        <motion.div style={{ y: yHero }} className="max-w-5xl mx-auto z-10 flex flex-col items-center">
+      {/* --- HERO SECTION --- */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 overflow-hidden">
+        
+        {/* Floating Ecosystem Background */}
+        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-40 sm:opacity-100">
+          <FloatingMockupCard delay={0.1} rotate={-12} x={-350} y={-100} name="Alex Chen" role="Full Stack Developer" avatar="https://i.pravatar.cc/150?u=alex" badge={{text: "React Master", color: "text-[#58A6FF] border-[#58A6FF]/30 bg-[#58A6FF]/10"}} />
+          <FloatingMockupCard delay={0.3} rotate={8} x={350} y={-50} name="Sarah Jones" role="UI/UX Designer" avatar="https://i.pravatar.cc/150?u=sarah" badge={{text: "Figma Pro", color: "text-[#BC8CFF] border-[#BC8CFF]/30 bg-[#BC8CFF]/10"}} />
+          <FloatingMockupCard delay={0.5} rotate={-5} x={-280} y={150} name="David Kim" role="AI Researcher" avatar="https://i.pravatar.cc/150?u=david" badge={{text: "Python Guru", color: "text-[#3FB950] border-[#3FB950]/30 bg-[#3FB950]/10"}} />
+          <FloatingMockupCard delay={0.7} rotate={15} x={250} y={180} name="Emily Davis" role="Backend Engineer" avatar="https://i.pravatar.cc/150?u=emily" badge={{text: "Node.js", color: "text-yellow-400 border-yellow-400/30 bg-yellow-400/10"}} />
           
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--border-glow)] bg-[#8B5CF6]/10 text-[#8B5CF6] text-xs font-mono mb-8 font-semibold tracking-wide">
-            <Sparkles className="w-3.5 h-3.5" /> Hackathon matchmaking, reimagined.
+          {/* Laser connection line SVG */}
+          <svg className="absolute inset-0 w-full h-full hidden md:block" style={{ filter: 'drop-shadow(0 0 10px rgba(188, 140, 255, 0.5))' }}>
+             <motion.path 
+                d="M 250 150 Q 500 250 750 150" 
+                fill="transparent" 
+                stroke="url(#gradient)" 
+                strokeWidth="2"
+                strokeDasharray="10,10"
+                className="animate-marquee"
+                style={{ strokeDashoffset: mouse.x * 0.1 }}
+             />
+             <defs>
+               <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                 <stop offset="0%" stopColor="#58A6FF" stopOpacity="0.1" />
+                 <stop offset="50%" stopColor="#BC8CFF" stopOpacity="1" />
+                 <stop offset="100%" stopColor="#3FB950" stopOpacity="0.1" />
+               </linearGradient>
+             </defs>
+          </svg>
+        </div>
+
+        <motion.div 
+          className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8 shadow-[0_0_30px_rgba(139,92,246,0.15)]"
+          >
+            <Sparkles className="w-4 h-4 text-[#BC8CFF]" />
+            <span className="text-xs font-mono font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-[#BC8CFF] to-[#58A6FF]">
+              Hackathon matchmaking, reimagined.
+            </span>
           </motion.div>
 
-          <motion.h1 initial="hidden" animate="visible" variants={fadeUpVariant} className="font-display font-bold tracking-tight mb-6 w-full max-w-4xl" style={{ fontSize: 'clamp(3rem, 8vw, 5.5rem)', lineHeight: 1.05 }}>
-            <span className="gradient-text block min-h-[1.2em]">{scrambleText}</span>
-            <span className="text-slate-400 block mt-2 text-[0.45em] font-normal tracking-normal">Swipe. Match. Build.</span>
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tight font-display mb-6 leading-tight"
+          >
+            Find Your <br className="sm:hidden" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#58A6FF] via-[#BC8CFF] to-[#3FB950] animate-shimmer-text">
+              {scrambleWord}.
+            </span>
           </motion.h1>
 
-          <motion.p initial="hidden" animate="visible" variants={fadeUpVariant} transition={{ delay: 0.1 }} className="text-[var(--text-secondary)] text-base sm:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-body">
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-xl sm:text-2xl text-[#8B949E] max-w-2xl mx-auto mb-10 leading-relaxed font-light"
+          >
             The smoothest way to find hackathon teammates — ranked by skills, availability, and vibe.
           </motion.p>
 
-          <motion.div initial="hidden" animate="visible" variants={fadeUpVariant} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-sm sm:max-w-none mx-auto mb-16">
-            {user ? (
-              <Button size="lg" onClick={() => navigate('/discover')} className="w-full sm:w-auto text-lg px-8 py-4">
-                Enter App <ArrowRight className="w-5 h-5 ml-2 inline-block" />
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, type: "spring" }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <MagneticButton onClick={() => user ? navigate('/discover') : navigate('/signup')}>
+              Enter App <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </MagneticButton>
+            
+            {!user && (
+              <Button 
+                variant="ghost" 
+                size="lg"
+                onClick={handleGuestLogin}
+                disabled={loadingGuest}
+                className="font-mono uppercase tracking-widest text-sm text-[#8B949E] hover:text-white mt-4 sm:mt-0"
+              >
+                {loadingGuest ? 'Entering...' : 'Try as Guest'}
               </Button>
-            ) : (
-              <>
-                <Button size="lg" onClick={handleGuest} disabled={loadingGuest} className="w-full sm:w-auto text-lg px-8 py-4">
-                  {loadingGuest ? 'Initializing...' : 'Start Swiping — Free'}
-                </Button>
-                <Button size="lg" variant="outline" onClick={() => navigate('/signin')} className="w-full sm:w-auto text-lg px-8 py-4 bg-white/5 border border-white/10 hover:border-white/20">
-                  Sign In
-                </Button>
-              </>
             )}
           </motion.div>
+        </motion.div>
 
-          {/* Social Proof Strip */}
-          <motion.div initial="hidden" animate="visible" variants={fadeUpVariant} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-[var(--text-tertiary)] font-medium">
-            <div className="flex -space-x-3">
-              {['https://i.pravatar.cc/100?img=1', 'https://i.pravatar.cc/100?img=2', 'https://i.pravatar.cc/100?img=3', 'https://i.pravatar.cc/100?img=4'].map((src, i) => (
-                <img key={i} src={src} alt="User" className="w-10 h-10 rounded-full border-2 border-[var(--bg-base)] object-cover shadow-lg" style={{ zIndex: 4 - i }} />
-              ))}
-            </div>
-            <div className="flex flex-col items-center sm:items-start">
-              <div className="flex gap-1 text-[var(--accent-tertiary)] mb-0.5">
-                {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-current" />)}
-              </div>
-              <span>Trusted by <strong className="text-[var(--text-primary)]">2,400+</strong> developers</span>
-            </div>
-          </motion.div>
+        <motion.div 
+          style={{ y: y1 }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 hidden sm:flex"
+        >
+          <span className="text-xs font-mono tracking-widest uppercase">Scroll to explore</span>
+          <div className="w-[1px] h-12 bg-gradient-to-b from-white/50 to-transparent"></div>
         </motion.div>
       </section>
 
-      {/* 2. STATS BAR */}
-      <section className="w-full border-y border-[var(--border-subtle)] bg-[var(--bg-surface)]/50 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-[var(--page-x)] py-8 md:py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-4 divide-x-0 md:divide-x divide-[var(--border-subtle)]">
-            {[
-              { label: 'Active Builders', value: 2450, suffix: '+' },
-              { label: 'Teams Formed', value: 340, suffix: '+' },
-              { label: 'Hackathons', value: 89, suffix: '' },
-              { label: 'Match Rate', value: 94, suffix: '%' }
-            ].map((stat, i) => (
-              <div key={i} className="flex flex-col items-center justify-center text-center px-4">
-                <span className="text-4xl font-display font-bold text-[var(--text-primary)] mb-2">
-                  <AnimatedNumber value={stat.value} />{stat.suffix}
-                </span>
-                <span className="text-[var(--text-tertiary)] font-mono text-sm uppercase tracking-wider">{stat.label}</span>
-              </div>
-            ))}
-          </div>
+      {/* --- MARQUEE --- */}
+      <TechMarquee />
+
+      {/* --- BENTO BOX FEATURES --- */}
+      <section className="relative py-32 px-4 sm:px-6 max-w-7xl mx-auto z-10">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl sm:text-5xl font-black text-white font-display mb-4">
+            Everything you need to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#BC8CFF] to-[#58A6FF]">win.</span>
+          </h2>
+          <p className="text-[#8B949E] max-w-xl mx-auto text-lg">Stop scrolling Discord channels. Start building.</p>
         </div>
-      </section>
 
-      {/* 3. FEATURES HIGHLIGHTS */}
-      <section className="section-padding max-w-7xl mx-auto">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={containerVariant} className="flex flex-col items-center mb-16 text-center">
-          <motion.h2 variants={fadeUpVariant} className="text-3xl md:text-5xl font-display font-bold mb-6">Designed for <span className="text-[var(--accent-secondary)]">Velocity</span>.</motion.h2>
-          <motion.p variants={fadeUpVariant} className="text-[var(--text-secondary)] text-lg max-w-2xl">Everything you need to find the perfect team, validate your idea, and ship the winning project.</motion.p>
-        </motion.div>
-
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={containerVariant} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Featured Card spanning 2 cols on Desktop */}
-          <motion.div variants={fadeUpVariant} className="md:col-span-2">
-            <div className="glass-card h-full p-8 md:p-12 relative overflow-hidden group animated-border">
-              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[var(--accent-primary)] opacity-10 rounded-full blur-3xl group-hover:opacity-20 transition-opacity" />
-              <Search className="w-12 h-12 text-[var(--accent-primary)] mb-6" />
-              <h3 className="text-2xl font-display font-bold mb-4">Tinder-style Swiping</h3>
-              <p className="text-[var(--text-secondary)] text-lg max-w-md">Stop scrolling endless Discord channels. We serve you developers perfectly matched to your stack, timezone, and hackathon goals. Swipe right to connect, left to pass.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-auto md:auto-rows-[300px]">
+          {/* Box 1: Large */}
+          <BentoCard className="md:col-span-2 md:row-span-2 group min-h-[400px] md:min-h-0">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-[#58A6FF]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[100px] pointer-events-none rounded-full" />
+            <Search className="w-10 h-10 text-[#58A6FF] mb-6" />
+            <h3 className="text-3xl font-black text-white mb-4">Algorithmic Matching</h3>
+            <p className="text-[#8B949E] text-lg max-w-md">Our matching engine pairs you with teammates based on overlapping skills, complementary roles, and timezone availability. It's like magic.</p>
+            
+            <div className="absolute bottom-8 right-8 w-48 h-48 sm:w-64 sm:h-64 opacity-50 group-hover:opacity-100 transition-opacity hidden sm:block">
+               <div className="relative w-full h-full">
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border border-[#58A6FF]/30 rounded-full animate-[spin_10s_linear_infinite]" />
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-[#BC8CFF]/20 rounded-full animate-[spin_15s_linear_infinite_reverse]" />
+                 <Cpu className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-[#58A6FF]" />
+               </div>
             </div>
-          </motion.div>
+          </BentoCard>
 
-          <motion.div variants={fadeUpVariant}>
-            <TiltCard className="h-full p-8 relative overflow-hidden group">
-              <Radar className="w-10 h-10 text-[var(--accent-secondary)] mb-6 group-hover:scale-110 transition-transform" />
-              <h3 className="text-xl font-display font-bold mb-3">Live Hackathon Radar</h3>
-              <p className="text-[var(--text-secondary)]">Integrated with Devfolio and Devpost. Discover hackathons that match your tech stack instantly.</p>
-            </TiltCard>
-          </motion.div>
+          {/* Box 2 */}
+          <BentoCard className="group min-h-[250px] md:min-h-0">
+            <Globe className="w-8 h-8 text-[#BC8CFF] mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Global Network</h3>
+            <p className="text-[#8B949E] text-sm">Find teammates near you, or across the globe. Built-in geolocation matching.</p>
+          </BentoCard>
 
-          <motion.div variants={fadeUpVariant}>
-            <TiltCard className="h-full p-8 relative overflow-hidden group">
-              <MessageSquare className="w-10 h-10 text-[var(--accent-success)] mb-6 group-hover:scale-110 transition-transform" />
-              <h3 className="text-xl font-display font-bold mb-3">Encrypted Terminal</h3>
-              <p className="text-[var(--text-secondary)]">Chat securely with potential teammates in a gorgeous, code-friendly terminal environment.</p>
-            </TiltCard>
-          </motion.div>
+          {/* Box 3 */}
+          <BentoCard className="group overflow-visible min-h-[250px] md:min-h-0">
+            <Trophy className="w-8 h-8 text-[#3FB950] mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Gamified Profiles</h3>
+            <p className="text-[#8B949E] text-sm mb-4">Earn XP, level up, and unlock legendary ranks as you build.</p>
+            <div className="mt-auto bg-[#161B22] border border-[#3FB950]/30 rounded-lg p-3 flex justify-between items-center transform group-hover:scale-105 transition-transform shadow-[0_0_20px_rgba(63,185,80,0.1)]">
+              <span className="text-xs font-mono font-bold text-white">Lvl 42 Architect</span>
+              <span className="text-xs text-[#3FB950] font-mono">+50 XP</span>
+            </div>
+          </BentoCard>
 
-          <motion.div variants={fadeUpVariant} className="md:col-span-2">
-             <div className="glass-card h-full p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 group">
-                <div className="flex-1">
-                  <Shield className="w-10 h-10 text-[var(--accent-tertiary)] mb-6" />
-                  <h3 className="text-2xl font-display font-bold mb-4">Stack Clash Gates</h3>
-                  <p className="text-[var(--text-secondary)] text-lg mb-6">Verify skills before you commit. Challenge potential teammates to quick, automated mini-assessments tailored to their claimed tech stack.</p>
-                  <ul className="space-y-3">
-                    {['Automated grading', 'Real-time collaboration', 'Customizable difficulty'].map(feature => (
-                      <li key={feature} className="flex items-center gap-3 text-sm text-[var(--text-primary)]">
-                        <CheckCircle2 className="w-5 h-5 text-[var(--accent-primary)]" /> {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex-1 w-full bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-xl p-4 font-mono text-sm text-[#06B6D4] shadow-inner">
-                  <p className="text-[#94A3B8] mb-2">// Stack verification challenge</p>
-                  <p><span className="text-[#8B5CF6]">function</span> <span className="text-[#F8FAFC]">solve</span>(data) {'{'}</p>
-                  <p className="pl-4 text-[#F59E0B]">return data.filter(Boolean);</p>
-                  <p>{'}'}</p>
-                  <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
-                    <span className="text-[#10B981]">Passed (12ms)</span>
-                    <span className="px-2 py-1 bg-[#10B981]/20 text-[#10B981] rounded text-xs">Verified</span>
-                  </div>
-                </div>
+          {/* Box 4: Wide */}
+          <BentoCard className="md:col-span-3 min-h-[300px] md:min-h-0">
+             <div className="flex flex-col md:flex-row gap-8 items-center h-full">
+               <div className="flex-1">
+                 <Users className="w-10 h-10 text-white mb-6" />
+                 <h3 className="text-3xl font-black text-white mb-4">Squad Management</h3>
+                 <p className="text-[#8B949E] text-lg">Create a squad, invite members with a secret join code, and manage your hackathon team from one powerful dashboard.</p>
+               </div>
+               <div className="flex-1 flex justify-center md:justify-end">
+                 <div className="flex -space-x-4">
+                   {[1,2,3,4].map((i) => (
+                     <div key={i} className="w-16 h-16 rounded-full border-4 border-[#0D1117] bg-[#161B22] overflow-hidden shadow-xl z-10 hover:scale-110 hover:z-20 transition-all cursor-pointer">
+                        <img src={`https://i.pravatar.cc/150?img=${i+10}`} alt="avatar" />
+                     </div>
+                   ))}
+                 </div>
+               </div>
              </div>
-          </motion.div>
-
-        </motion.div>
-      </section>
-
-      {/* 4. DEMO SECTION */}
-      <section className="section-padding bg-[var(--bg-surface)] border-y border-[var(--border-subtle)]">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-          <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="relative">
-             <div className="aspect-[4/5] sm:aspect-square w-full max-w-md mx-auto glass-card border-[var(--border-glow)] shadow-[0_0_80px_rgba(139,92,246,0.15)] relative overflow-hidden flex flex-col">
-                <div className="h-12 border-b border-[var(--border-subtle)] flex items-center px-4 gap-2 bg-white/5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                </div>
-                <div className="flex-1 p-6 flex flex-col gap-4 bg-[var(--bg-base)]">
-                   <div className="w-full aspect-video rounded-lg bg-[url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800')] bg-cover bg-center border border-[var(--border-subtle)]" />
-                   <h4 className="text-xl font-display font-bold mt-2">Alex Chen</h4>
-                   <p className="text-[var(--text-secondary)] text-sm -mt-3">Fullstack · React, Node, Rust</p>
-                   <div className="flex gap-2 mt-2">
-                     <span className="px-3 py-1 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] text-xs font-mono">React</span>
-                     <span className="px-3 py-1 rounded-full bg-[#06B6D4]/20 text-[#06B6D4] text-xs font-mono">PostgreSQL</span>
-                   </div>
-                    <div className="mt-auto flex justify-center gap-6">
-                      <div className="w-14 h-14 rounded-full border-2 border-red-500/50 flex items-center justify-center text-red-500/50 hover:bg-red-500/10 transition-colors"><X className="w-6 h-6" /></div>
-                      <div className="w-14 h-14 rounded-full border-2 border-[#10B981]/50 flex items-center justify-center text-[#10B981]/50 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-[#10B981]/10 transition-colors"><Heart className="w-6 h-6 fill-[#10B981]/20" /></div>
-                   </div>
-                </div>
-             </div>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-            <div className="w-12 h-12 rounded-xl bg-[var(--accent-secondary)]/10 text-[var(--accent-secondary)] flex items-center justify-center mb-6">
-              <Cpu className="w-6 h-6" />
-            </div>
-            <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight">Stop settling for mediocre teammates.</h2>
-            <p className="text-[var(--text-secondary)] text-lg mb-8 leading-relaxed">Hackathons are won by the team, not just the idea. HackMatch uses a proprietary algorithm to analyze your skills, availability, and past projects to surface the perfect partners.</p>
-            <Button size="lg" onClick={() => navigate('/discover')} className="flex items-center gap-2">
-              Start Matching <ArrowRight className="w-4 h-4" />
-            </Button>
-          </motion.div>
+          </BentoCard>
         </div>
       </section>
 
-      {/* 5. TESTIMONIALS */}
-      <section className="section-padding max-w-7xl mx-auto overflow-hidden">
-        <div className="text-center mb-16">
-           <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">Built for Winners</h2>
-           <p className="text-[var(--text-secondary)]">Teams formed on HackMatch have won over $150k in prizes.</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-             { name: "Sarah Jenkins", role: "Frontend Dev", quote: "Found an incredible backend dev 12 hours before the EthGlobal deadline. We ended up taking 2nd place overall.", avatar: "https://i.pravatar.cc/150?img=5" },
-             { name: "Marcus Doe", role: "UI/UX Designer", quote: "The UI of HackMatch itself is what sold me. If they care this much about design, I knew the devs here would be top tier.", avatar: "https://i.pravatar.cc/150?img=11" },
-             { name: "Priya Patel", role: "Smart Contract Dev", quote: "Stack clash verified my solidity skills before matching. Saved me hours of explaining my background to random strangers.", avatar: "https://i.pravatar.cc/150?img=9" }
-          ].map((t, i) => (
-             <TiltCard key={i} className="p-6 md:p-8 flex flex-col justify-between">
-                <div className="flex text-[var(--accent-tertiary)] mb-6">
-                  {[1,2,3,4,5].map(star => <Star key={star} className="w-4 h-4 fill-current" />)}
-                </div>
-                <p className="text-lg italic text-[var(--text-primary)] mb-8 font-serif leading-relaxed">"{t.quote}"</p>
-                <div className="flex items-center gap-4 mt-auto border-t border-[var(--border-subtle)] pt-6">
-                  <img src={t.avatar} className="w-12 h-12 rounded-full object-cover border border-white/10" alt={t.name} />
-                  <div>
-                    <h4 className="font-display font-bold text-sm">{t.name}</h4>
-                    <span className="text-xs font-mono text-[var(--accent-primary)]">{t.role}</span>
-                  </div>
-                </div>
-             </TiltCard>
-          ))}
+      {/* --- CTA SECTION --- */}
+      <section className="relative py-32 px-4 border-t border-white/5 bg-gradient-to-b from-transparent to-[#BC8CFF]/5">
+        <div className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center">
+          <h2 className="text-5xl sm:text-7xl font-black text-white font-display mb-8">
+            Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#BC8CFF] to-[#58A6FF]">ship?</span>
+          </h2>
+          <MagneticButton onClick={() => user ? navigate('/discover') : navigate('/signup')} className="scale-110">
+            Join the Network
+          </MagneticButton>
         </div>
       </section>
-
-      {/* 6. FINAL CTA */}
-      <section className="mt-20 border-t border-[var(--border-subtle)] relative overflow-hidden">
-         <div className="absolute inset-0 bg-gradient-to-b from-[var(--bg-base)] to-[#8B5CF6]/10 -z-10" />
-         <div className="max-w-4xl mx-auto text-center section-padding py-32">
-            <h2 className="text-4xl md:text-6xl font-display font-bold mb-8">Ready to Build?</h2>
-            <p className="text-xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto">Join thousands of top-tier developers. Form your dream team today and ship something incredible this weekend.</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={handleGuest} className="px-10 py-4 text-lg shadow-[0_0_40px_rgba(139,92,246,0.3)]">
-                Launch App
-              </Button>
-              <Button size="lg" variant="outline" className="px-10 py-4 text-lg bg-white/5 flex items-center justify-center gap-2">
-                 <Code2 className="w-5 h-5" /> Star on GitHub
-              </Button>
-            </div>
-         </div>
-      </section>
-
-      {/* 7. FOOTER */}
-      <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] py-12 px-6">
-         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-           <div className="flex items-center gap-2">
-              <img src="/logo.png?v=2" alt="HackMatch Logo" className="w-6 h-6 rounded object-contain" />
-              <span className="font-display font-bold text-sm tracking-widest text-[var(--text-secondary)] uppercase">HackMatch</span>
-           </div>
-           <div className="flex gap-6 text-sm text-[var(--text-tertiary)] font-mono">
-              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Twitter</a>
-              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">GitHub</a>
-              <a href="#" className="hover:text-[var(--text-primary)] transition-colors">Terms</a>
-           </div>
-           <div className="text-xs text-[var(--text-tertiary)] text-center md:text-right">
-              © 2026 HackMatch. All rights reserved.<br/>Built for the obsessed.
-           </div>
-         </div>
+      
+      {/* Footer */}
+      <footer className="py-8 text-center text-sm font-mono text-[#8B949E] border-t border-white/5">
+        <p className="flex items-center justify-center gap-2">Built with <Heart className="w-4 h-4 text-red-500 fill-red-500 animate-pulse" /> for Hackathons</p>
       </footer>
-
     </div>
   );
 }
