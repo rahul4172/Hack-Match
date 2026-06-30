@@ -50,6 +50,7 @@ export const useAuth = create<AuthState>((set) => ({
   },
   signOut: () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('private_key');
     set({ user: null });
   },
   updateProfile: (profileData: Partial<UserProfile>) => {
