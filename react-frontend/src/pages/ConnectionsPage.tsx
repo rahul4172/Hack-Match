@@ -153,37 +153,39 @@ export default function ConnectionsPage() {
                 {squads.map((squad, i) => (
                   <GlowCard key={squad.id} variant="purple" delay={i * 0.1}>
                     <div className="p-5 flex flex-col h-full gap-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-bold text-white">{squad.name}</h3>
-                          <p className="text-xs text-purple-400 font-mono mt-1">Hackathon: {squad.hackathon_name}</p>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                              {squad.name}
+                              {/* SQUAD ACTIONS NEXT TO NAME */}
+                              {String(squad.creator_id) === String(user?.id) ? (
+                                <div className="flex items-center gap-1 ml-2">
+                                  <button onClick={() => handleRenameSquad(squad.id, squad.name)} className="p-1.5 bg-[#8B949E]/10 rounded-md text-[#8B949E] hover:text-white hover:bg-[#8B949E]/30 transition-all" title="Rename Squad">
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => handleDisbandSquad(squad.id)} className="p-1.5 bg-red-500/10 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all" title="Disband Squad">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button onClick={() => handleLeaveSquad(squad.id)} className="ml-2 p-1.5 bg-red-500/10 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all" title="Leave Squad">
+                                  <LogOut className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </h3>
+                            <p className="text-xs text-purple-400 font-mono mt-1">Hackathon: {squad.hackathon_name}</p>
+                          </div>
+                          
+                          <div 
+                            className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-black/60 transition-colors"
+                            onClick={() => copyToClipboard(squad.join_code)}
+                            title="Copy Join Code"
+                          >
+                            <span className="text-xs font-mono font-bold tracking-widest text-[#58A6FF]">{squad.join_code}</span>
+                            <Copy className="w-3 h-3 text-[#8B949E]" />
+                          </div>
                         </div>
-                        <div 
-                          className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-black/60 transition-colors"
-                          onClick={() => copyToClipboard(squad.join_code)}
-                          title="Copy Join Code"
-                        >
-                          <span className="text-xs font-mono font-bold tracking-widest text-[#58A6FF]">{squad.join_code}</span>
-                          <Copy className="w-3 h-3 text-[#8B949E]" />
-                        </div>
-                      </div>
-                      
-                      {/* SQUAD ACTIONS */}
-                      <div className="flex gap-2 justify-end -mt-2">
-                        {squad.creator_id === user?.id ? (
-                          <>
-                            <button onClick={() => handleRenameSquad(squad.id, squad.name)} className="text-[#8B949E] hover:text-white transition-colors" title="Rename Squad">
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDisbandSquad(squad.id)} className="text-[#8B949E] hover:text-red-400 transition-colors" title="Disband Squad">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <button onClick={() => handleLeaveSquad(squad.id)} className="text-[#8B949E] hover:text-red-400 transition-colors" title="Leave Squad">
-                            <LogOut className="w-4 h-4" />
-                          </button>
-                        )}
                       </div>
 
                       <div className="mt-auto">
