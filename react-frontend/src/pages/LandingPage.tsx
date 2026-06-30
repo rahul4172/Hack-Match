@@ -103,8 +103,6 @@ export default function LandingPage() {
   const { scrollYProgress } = useScroll();
   const yHero = useTransform(scrollYProgress, [0, 1], [0, 300]);
 
-  useEffect(() => { if (user) navigate('/discover'); }, [user, navigate]);
-
   const handleGuest = async () => {
     setLoadingGuest(true);
     try {
@@ -146,12 +144,20 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div initial="hidden" animate="visible" variants={fadeUpVariant} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-sm sm:max-w-none mx-auto mb-16">
-            <Button size="lg" onClick={handleGuest} disabled={loadingGuest} className="w-full sm:w-auto text-lg px-8 py-4">
-              {loadingGuest ? 'Initializing...' : 'Start Swiping — Free'}
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/signin')} className="w-full sm:w-auto text-lg px-8 py-4 bg-white/5 border border-white/10 hover:border-white/20">
-              Sign In
-            </Button>
+            {user ? (
+              <Button size="lg" onClick={() => navigate('/discover')} className="w-full sm:w-auto text-lg px-8 py-4">
+                Enter App <ArrowRight className="w-5 h-5 ml-2 inline-block" />
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" onClick={handleGuest} disabled={loadingGuest} className="w-full sm:w-auto text-lg px-8 py-4">
+                  {loadingGuest ? 'Initializing...' : 'Start Swiping — Free'}
+                </Button>
+                <Button size="lg" variant="outline" onClick={() => navigate('/signin')} className="w-full sm:w-auto text-lg px-8 py-4 bg-white/5 border border-white/10 hover:border-white/20">
+                  Sign In
+                </Button>
+              </>
+            )}
           </motion.div>
 
           {/* Social Proof Strip */}

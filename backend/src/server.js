@@ -487,7 +487,9 @@ app.get('/connections', authenticate, async (req, res) => {
       status: 'accepted'
     }).populate('sender_id receiver_id');
 
-    const accepted = acceptedConns.map(c => {
+    const accepted = acceptedConns
+      .filter(c => c.sender_id && c.receiver_id)
+      .map(c => {
       const cObj = c.toJSON();
       const isSender = c.sender_id._id.toString() === req.user.id;
       const otherUser = isSender ? c.receiver_id : c.sender_id;
