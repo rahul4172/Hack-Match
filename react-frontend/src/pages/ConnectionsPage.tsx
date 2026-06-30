@@ -71,12 +71,11 @@ export default function ConnectionsPage() {
     e.preventDefault();
     if (!joinCode) return;
     try {
-      const response = await fetchAPI('/squads/join', { method: 'POST', body: JSON.stringify({ join_code: joinCode }) });
+      await fetchAPI('/squads/join', { method: 'POST', body: JSON.stringify({ join_code: joinCode }) });
       setShowJoinModal(false);
       setJoinCode('');
       loadConnections();
       alert('Successfully joined squad!');
-      loadConnections();
     } catch (err: any) {
       alert(err.message || 'Failed to join squad');
     }
