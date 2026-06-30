@@ -91,7 +91,7 @@ export async function decryptMessage(encryptedBlob: string, sharedSecret: Crypto
     );
 
     return new TextDecoder().decode(decrypted);
-  } catch (err) {
-    return "[Encrypted message - Decryption failed]";
+  } catch (err: any) {
+    return "[Encrypted message - Decryption failed: " + (err.message || err.toString()) + "]";
   }
 }

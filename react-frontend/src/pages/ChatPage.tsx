@@ -114,9 +114,10 @@ export default function ChatPage() {
         const decryptedMsgs = await Promise.all(data.map(async (msg: any) => {
           try {
             const dec = await decryptMessage(msg.content, sharedSecret);
-            return { ...msg, content: dec, failed: dec === '[Encrypted message - Decryption failed]' };
-          } catch(e) {
-             return { ...msg, content: '[Encrypted message - Decryption failed]', failed: true };
+            const isFailed = dec.startsWith('[Encrypted message - Decryption failed');
+            return { ...msg, content: dec, failed: isFailed };
+          } catch(e: any) {
+             return { ...msg, content: `[Encrypted message - Decryption failed: ${e.message}]`, failed: true };
           }
         }));
         setMessages(decryptedMsgs);
@@ -291,8 +292,8 @@ export default function ChatPage() {
                                 {isMe ? 'console.log(' : `${senderName.replace(/\s+/g, '_')} > `}
                               </span>
                               {msg.failed ? (
-                                <span className="text-red-400 font-bold bg-red-900/20 px-1 py-0.5 rounded">
-                                  [ENCRYPTION KEY LOST - MESSAGE UNRECOVERABLE]
+                                <span className="text-red-400 font-bold bg-red-900/20 px-1 py-0.5 rounded text-[10px] sm:text-xs">
+                                  {msg.content}
                                 </span>
                               ) : (
                                 <span className="text-white">
