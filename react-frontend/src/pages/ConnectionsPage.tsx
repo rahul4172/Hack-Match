@@ -69,14 +69,16 @@ export default function ConnectionsPage() {
 
   const handleJoinSquad = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!joinCode) return;
     try {
-      await fetchAPI('/squads/join', { method: 'POST', body: JSON.stringify({ join_code: joinCode }) });
+      const response = await fetchAPI('/squads/join', { method: 'POST', body: JSON.stringify({ join_code: joinCode }) });
       setShowJoinModal(false);
       setJoinCode('');
       loadConnections();
-    } catch (err) {
+      alert(`✅ Successfully joined squad: ${response.name}!`);
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to join squad. Check if the code is correct.');
+      alert(err.message || 'Failed to join squad');
     }
   };
 
