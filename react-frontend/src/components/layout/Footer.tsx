@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/logo.png" alt="HackMatch Logo" className="w-6 h-6 rounded object-contain" />
+            <img src="/logo.png?v=2" alt="HackMatch Logo" className="w-6 h-6 rounded object-contain" />
             <p className="font-display font-bold text-lg gradient-text m-0">HackMatch</p>
           </div>
           <p className="text-sm text-slate-400 max-w-xs">Find your hackathon squad. Swipe, match, build.</p>

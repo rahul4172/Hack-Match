@@ -351,7 +351,7 @@ export default function LandingPage() {
       <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] py-12 px-6">
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="HackMatch Logo" className="w-6 h-6 rounded object-contain" />
+              <img src="/logo.png?v=2" alt="HackMatch Logo" className="w-6 h-6 rounded object-contain" />
               <span className="font-display font-bold text-sm tracking-widest text-[var(--text-secondary)] uppercase">HackMatch</span>
            </div>
            <div className="flex gap-6 text-sm text-[var(--text-tertiary)] font-mono">
