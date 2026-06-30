@@ -23,6 +23,7 @@ import Idea from './models/Idea.js';
 import Hackathon from './models/Hackathon.js';
 import UserHackathon from './models/UserHackathon.js';
 import StackClash from './models/StackClash.js';
+import Squad from './models/Squad.js';
 import Reputation from './models/Reputation.js';
 import Debrief from './models/Debrief.js';
 
@@ -681,6 +682,55 @@ app.get('/stories/:id', async (req, res) => {
       dObj.hackathon_id = debrief.hackathon_id._id;
     }
     res.json(dObj);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------- SQUADS ----------------
+app.post('/squads', authenticate, async (req, res) => {
+  const { name, hackathon_name } = req.body;
+  if (!name || !hackathon_name) return res.status(400).json({ error: 'Name and hackathon_name required' });
+  
+  try {
+    const join_code = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6 chars
+    const squad = await Squad.create({
+      name,
+      hackathon_name,
+      join_code,
+      creator_id: req.user.id,
+      members: [req.user.id]
+    });
+    res.json(squad.toJSON());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/squads/join', authenticate, async (req, res) => {
+  const { join_code } = req.body;
+  if (!join_code) return res.status(400).json({ error: 'join_code required' });
+  
+  try {
+    const squad = await Squad.findOne({ join_code: join_code.toUpperCase() });
+    if (!squad) return res.status(404).json({ error: 'Squad not found' });
+    
+    if (!squad.members.includes(req.user.id)) {
+      squad.members.push(req.user.id);
+      await squad.save();
+    }
+    res.json(squad.toJSON());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/squads', authenticate, async (req, res) => {
+  try {
+    const squads = await Squad.find({ members: req.user.id })
+      .populate('members', 'name avatar role')
+      .sort({ created_at: -1 });
+    res.json(squads);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

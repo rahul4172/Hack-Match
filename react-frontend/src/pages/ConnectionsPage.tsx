@@ -5,7 +5,8 @@ import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useNavigate } from 'react-router-dom';
-import { User, MapPin } from 'lucide-react';
+import { User, MapPin, Users, Plus, LogIn, Copy, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ConnectionsPage() {
   const { user } = useAuth();
@@ -13,7 +14,14 @@ export default function ConnectionsPage() {
   const [pending, setPending] = useState<any[]>([]);
   const [accepted, setAccepted] = useState<any[]>([]);
   const [nearby, setNearby] = useState<any[]>([]);
+  const [squads, setSquads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modals state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [createData, setCreateData] = useState({ name: '', hackathon_name: '' });
+  const [joinCode, setJoinCode] = useState('');
 
   const loadConnections = async () => {
     try {
@@ -22,6 +30,8 @@ export default function ConnectionsPage() {
       setAccepted(data.accepted);
       const nearbyData = await fetchAPI('/users/nearby');
       setNearby(nearbyData);
+      const squadsData = await fetchAPI('/squads');
+      setSquads(squadsData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -42,16 +52,109 @@ export default function ConnectionsPage() {
     }
   };
 
+  const handleCreateSquad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await fetchAPI('/squads', { method: 'POST', body: JSON.stringify(createData) });
+      setShowCreateModal(false);
+      setCreateData({ name: '', hackathon_name: '' });
+      loadConnections();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to create squad');
+    }
+  };
+
+  const handleJoinSquad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await fetchAPI('/squads/join', { method: 'POST', body: JSON.stringify({ join_code: joinCode }) });
+      setShowJoinModal(false);
+      setJoinCode('');
+      loadConnections();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to join squad. Check if the code is correct.');
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Join code copied to clipboard!');
+  };
+
   if (!user) return <div className="p-8 text-center mt-16 text-[#8B949E]">Please sign in.</div>;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <PageHeader title="Network & Connections" subtitle="Manage your squad and find nearby devs" />
+      <PageHeader title="Network & Squads" subtitle="Manage your hackathon squads and connections" />
 
       {loading ? (
         <div className="text-[#8B949E] font-mono text-sm animate-pulse">Loading data stream...</div>
       ) : (
         <div className="space-y-10 sm:space-y-12">
+          
+          {/* SQUADS SECTION */}
+          <section>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <h2 className="text-base sm:text-lg font-bold flex items-center gap-2 text-white">
+                <Users className="w-5 h-5 text-purple-400" />
+                Hackathon Squads
+                <span className="bg-purple-500/10 text-purple-400 text-xs py-0.5 px-2 rounded-full border border-purple-500/30">{squads.length}</span>
+              </h2>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowJoinModal(true)}>
+                  <LogIn className="w-4 h-4 mr-2" /> Join Squad
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => setShowCreateModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" /> Create Squad
+                </Button>
+              </div>
+            </div>
+
+            {squads.length === 0 ? (
+              <p className="text-[#8B949E] text-sm">You haven't joined any hackathon squads yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {squads.map((squad, i) => (
+                  <GlowCard key={squad.id} variant="purple" delay={i * 0.1}>
+                    <div className="p-5 flex flex-col h-full gap-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-bold text-white">{squad.name}</h3>
+                          <p className="text-xs text-purple-400 font-mono mt-1">Hackathon: {squad.hackathon_name}</p>
+                        </div>
+                        <div 
+                          className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 cursor-pointer hover:bg-black/60 transition-colors"
+                          onClick={() => copyToClipboard(squad.join_code)}
+                          title="Copy Join Code"
+                        >
+                          <span className="text-xs font-mono font-bold tracking-widest text-[#58A6FF]">{squad.join_code}</span>
+                          <Copy className="w-3 h-3 text-[#8B949E]" />
+                        </div>
+                      </div>
+                      
+                      <div className="mt-auto">
+                        <p className="text-xs text-[#8B949E] mb-2 font-mono">Members ({squad.members?.length || 0})</p>
+                        <div className="flex flex-wrap gap-2">
+                          {squad.members?.map((member: any) => (
+                            <div key={member.id || member._id} className="flex items-center gap-2 bg-[#161B22] border border-white/10 rounded-full pr-3 pl-1 py-1">
+                              <div className="w-6 h-6 rounded-full bg-black flex items-center justify-center overflow-hidden shrink-0">
+                                {member.avatar ? <img src={member.avatar} alt="avatar" className="w-full h-full object-cover"/> : <User className="w-3 h-3 text-white/50" />}
+                              </div>
+                              <span className="text-xs text-white truncate max-w-[80px]">{member.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </GlowCard>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* PENDING CONNECTIONS */}
           <section>
             <h2 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2 text-[#BC8CFF]">
               Pending Requests
@@ -76,9 +179,10 @@ export default function ConnectionsPage() {
             )}
           </section>
 
+          {/* MY CONNECTIONS */}
           <section>
             <h2 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2 text-[#58A6FF]">
-              My Squad
+              My Connections
               <span className="bg-[#58A6FF]/10 text-[#58A6FF] text-xs py-0.5 px-2 rounded-full border border-[#58A6FF]/30">{accepted.length}</span>
             </h2>
             {accepted.length === 0 ? (
@@ -100,6 +204,7 @@ export default function ConnectionsPage() {
             )}
           </section>
 
+          {/* NEARBY DEVELOPERS */}
           <section>
             <h2 className="text-base sm:text-lg font-bold mb-4 flex items-center gap-2 text-[#3FB950]">
               Nearby Developers
@@ -137,6 +242,53 @@ export default function ConnectionsPage() {
           </section>
         </div>
       )}
+
+      {/* CREATE SQUAD MODAL */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="glass p-6 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl relative overflow-hidden">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white">Create Squad</h2>
+                <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleCreateSquad} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">Squad Name</label>
+                  <input required type="text" value={createData.name} onChange={e => setCreateData({...createData, name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="e.g. The Try Catchers" />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">Target Hackathon</label>
+                  <input required type="text" value={createData.hackathon_name} onChange={e => setCreateData({...createData, hackathon_name: e.target.value})} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" placeholder="e.g. ISRO Hackathon" />
+                </div>
+                <Button variant="primary" type="submit" className="w-full mt-4">Create & Get Code</Button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* JOIN SQUAD MODAL */}
+      <AnimatePresence>
+        {showJoinModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="glass p-6 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl relative overflow-hidden">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white">Join Squad</h2>
+                <button onClick={() => setShowJoinModal(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleJoinSquad} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono text-slate-400 mb-1">6-Character Join Code</label>
+                  <input required type="text" maxLength={6} value={joinCode} onChange={e => setJoinCode(e.target.value.toUpperCase())} className="w-full bg-[#0D1117] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono tracking-widest text-center focus:outline-none focus:border-[#58A6FF]" placeholder="e.g. XJ9K1M" />
+                </div>
+                <Button variant="primary" type="submit" className="w-full mt-4">Join Squad</Button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
