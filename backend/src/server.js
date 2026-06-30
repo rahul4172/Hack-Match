@@ -418,6 +418,26 @@ app.post('/hackathons/:id/join', authenticate, async (req, res) => {
   }
 });
 
+app.post('/hackathons', authenticate, async (req, res) => {
+  const { name, date, prize_pool, tech_stack_focus, team_size, platform, registration_url } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  
+  try {
+    const hackathon = await Hackathon.create({
+      name,
+      date,
+      prize_pool,
+      tech_stack_focus,
+      team_size,
+      platform,
+      registration_url
+    });
+    res.json(hackathon.toJSON());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ---------------- CONNECTIONS ----------------
 app.post('/connections/request', authenticate, async (req, res) => {
   const { receiverId } = req.body;
