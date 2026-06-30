@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   linkedin: { type: String },
   avatar: { type: String },
   public_key: { type: String },
+  location: { type: String },
   hack_score: { type: Number, default: 0 },
 }, { timestamps: { createdAt: 'created_at', updatedAt: false } });
 

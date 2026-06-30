@@ -54,13 +54,17 @@ function FilterSidebar({
 }
 
 // --- Tinder Swipe Card Component ---
-function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge }: any) {
+function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge, currentUserLocation }: any) {
   const isIdea = item.type === 'idea';
   const u = item;
   let skills: string[] = [];
   try { skills = JSON.parse(u.skills || '[]'); } catch (e) {}
 
   const badge = !isIdea ? getHackScoreBadge(u.hack_score || 0) : null;
+  const isNearYou = currentUserLocation && u.location && (
+    u.location.toLowerCase().includes(currentUserLocation.toLowerCase()) || 
+    currentUserLocation.toLowerCase().includes(u.location.toLowerCase())
+  );
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-10, 10]);
@@ -113,10 +117,13 @@ function SwipeCard({ item, isTop, onSwipe, getHackScoreBadge }: any) {
         
         <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
           <div>
-            <h2 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md">
+            <h2 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md flex-wrap">
               {isIdea ? u.title : `${u.name}, ${Math.floor(Math.random() * 6) + 18}`}
               {badge && (
                 <span className={`text-[10px] px-2 py-1 rounded-full border font-mono font-bold ${badge.color}`}>{badge.label}</span>
+              )}
+              {isNearYou && (
+                <span className="text-[10px] px-2 py-1 rounded-full border font-mono font-bold text-red-400 border-red-400/50 bg-red-400/10 flex items-center gap-1">📍 Near You</span>
               )}
             </h2>
             <p className="text-sm font-mono text-[#58A6FF] drop-shadow-md">
@@ -170,6 +177,7 @@ export default function DiscoverPage() {
   const [rolesFilter, setRolesFilter] = useState<string[]>([]);
   const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [showSignalModal, setShowSignalModal] = useState(false);
   const [signalMessage, setSignalMessage] = useState('');
@@ -186,6 +194,7 @@ export default function DiscoverPage() {
       const query = new URLSearchParams();
       if (rolesFilter.length > 0) query.append('roles', rolesFilter.join(','));
       if (skillsFilter.length > 0) query.append('skills', skillsFilter.join(','));
+      if (searchQuery.trim() !== '') query.append('search', searchQuery.trim());
 
       const [usersData, signalsData] = await Promise.all([
         fetchAPI(`/users?${query.toString()}`),
@@ -305,6 +314,27 @@ export default function DiscoverPage() {
       {/* Main Content Area */}
       <div className="flex-1 w-full flex flex-col items-center h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] overflow-hidden">
         
+        {/* Search Bar */}
+        <div className="w-full max-w-[400px] px-4 mt-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input 
+              type="text" 
+              placeholder="Search by name, role, or bio..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && loadData()}
+              className="w-full bg-[#161B22] border border-white/10 rounded-full py-2 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-[#58A6FF] transition-colors"
+            />
+            <button 
+              onClick={loadData}
+              className="absolute right-1 top-1/2 -translate-y-1/2 bg-[#58A6FF]/20 text-[#58A6FF] text-xs px-3 py-1 rounded-full hover:bg-[#58A6FF]/30 transition-colors"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+
         {/* Swipe Stack Container */}
         {loading ? (
           <div className="w-full h-full flex items-center justify-center">
@@ -322,6 +352,7 @@ export default function DiscoverPage() {
                     isTop={isTop}
                     onSwipe={onSwipe}
                     getHackScoreBadge={getHackScoreBadge}
+                    currentUserLocation={(user as any)?.location}
                   />
                 );
               })}

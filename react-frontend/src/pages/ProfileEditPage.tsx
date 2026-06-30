@@ -17,7 +17,8 @@ export default function ProfileEditPage() {
     learnings: '',
     github: '',
     linkedin: '',
-    skills: ''
+    skills: '',
+    location: ''
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
@@ -38,7 +39,8 @@ export default function ProfileEditPage() {
         learnings: user.learnings || '',
         github: user.github || '',
         linkedin: user.linkedin || '',
-        skills: parsedSkills
+        skills: parsedSkills,
+        location: user.location || ''
       });
     }
   }, [user]);
@@ -136,6 +138,11 @@ export default function ProfileEditPage() {
             <label className="block text-sm text-gray-400 mb-1">Role / Title</label>
             <input name="role" value={formData.role} onChange={handleChange} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none text-sm" placeholder="e.g. Frontend Engineer" />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Location (City, State)</label>
+          <input name="location" value={formData.location} onChange={handleChange} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 text-white focus:border-cyan-500 focus:outline-none text-sm" placeholder="e.g. San Francisco, CA" />
         </div>
 
         <div>

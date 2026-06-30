@@ -125,6 +125,13 @@ function calculateSynergy(u1, u2) {
   try { s1 = JSON.parse(u1.skills || '[]'); } catch { /* ignore */ }
   try { s2 = JSON.parse(u2.skills || '[]'); } catch { /* ignore */ }
   score += s1.filter(sk => s2.includes(sk)).length * 5;
+
+  if (u1.location && u2.location && u1.location.trim() !== '') {
+    const loc1 = u1.location.toLowerCase();
+    const loc2 = u2.location.toLowerCase();
+    if (loc1.includes(loc2) || loc2.includes(loc1)) score += 50;
+  }
+
   return Math.min(100, Math.max(0, score));
 }
 
@@ -211,9 +218,31 @@ app.get('/auth/me', authenticate, async (req, res) => {
 // ---------------- USERS ----------------
 app.get('/users', authenticate, async (req, res) => {
   try {
-    const { roles, skills } = req.query;
+    const { roles, skills, search } = req.query;
     const currentUser = await User.findById(req.user.id);
-    let users = await User.find({ _id: { $ne: req.user.id } });
+    
+    // Exclude users already interacted with (swiped right/left or connected)
+    const connections = await Connection.find({
+      $or: [{ sender_id: req.user.id }, { receiver_id: req.user.id }]
+    });
+    
+    const excludeIds = [req.user.id];
+    for (const conn of connections) {
+      if (conn.sender_id.toString() === req.user.id) excludeIds.push(conn.receiver_id.toString());
+      if (conn.receiver_id.toString() === req.user.id) excludeIds.push(conn.sender_id.toString());
+    }
+
+    const query = { _id: { $nin: excludeIds } };
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { role: { $regex: search, $options: 'i' } },
+        { bio: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    let users = await User.find(query);
 
     // Apply filtering
     if (roles) {
@@ -278,7 +307,7 @@ app.get('/users', authenticate, async (req, res) => {
 });
 
 app.put('/users/profile', authenticate, async (req, res) => {
-  const { name, bio, skills, winnings, learnings, github, linkedin, role, public_key } = req.body;
+  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, public_key } = req.body;
   try {
     const existing = await User.findById(req.user.id);
     if (!existing) return res.status(404).json({ error: 'User not found' });
@@ -291,6 +320,7 @@ app.put('/users/profile', authenticate, async (req, res) => {
     existing.github = github ?? existing.github;
     existing.linkedin = linkedin ?? existing.linkedin;
     existing.role = role ?? existing.role;
+    existing.location = location ?? existing.location;
     if (public_key !== undefined) existing.public_key = public_key;
 
     await existing.save();
