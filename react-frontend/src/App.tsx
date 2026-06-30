@@ -94,10 +94,15 @@ function NavBar() {
 
         {/* Desktop CTA / Profile */}
         <div className="hidden md:flex gap-3 items-center">
-          <Link to="/profile" className="text-sm font-display font-medium text-slate-300 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5">
+          <Link to="/profile" className="flex items-center gap-2 text-sm font-display font-medium text-slate-300 hover:text-white transition-colors px-4 py-1.5 rounded-lg hover:bg-white/5">
+            {_user?.avatar ? (
+              <img src={_user.avatar} alt="Profile" className="w-6 h-6 rounded-full object-cover border border-[#58A6FF]" />
+            ) : (
+              <User className="w-4 h-4" />
+            )}
             Profile
           </Link>
-          <button onClick={logout} className="btn-primary text-sm px-5 py-2">
+          <button onClick={logout} className="btn-primary text-sm px-5 py-1.5">
             Log Out
           </button>
         </div>
@@ -164,7 +169,12 @@ function NavBar() {
                 <div className="border-t border-white/10 my-4 mx-2" />
                 
                 <Link to="/profile" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-display text-slate-300 hover:bg-white/5 hover:text-white transition-colors">
-                  <User className="w-5 h-5" /> Profile
+                  {_user?.avatar ? (
+                    <img src={_user.avatar} alt="Profile" className="w-5 h-5 rounded-full object-cover border border-[#58A6FF]" />
+                  ) : (
+                    <User className="w-5 h-5" />
+                  )}
+                  Profile
                 </Link>
                 <button onClick={logout} className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-display text-[#EF4444] hover:bg-[#EF4444]/10 hover:text-red-300 transition-colors text-left w-full mt-auto mb-4 border border-transparent hover:border-[#EF4444]/20">
                   <LogOut className="w-5 h-5" /> Log Out

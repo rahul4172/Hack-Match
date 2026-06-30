@@ -166,7 +166,7 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
     });
 
     const token = jwt.sign({ id: user._id, email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, email, name } });
+    res.json({ token, user: { id: user._id, email, name, avatar } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
