@@ -338,7 +338,7 @@ app.get('/users', authenticate, async (req, res) => {
 });
 
 app.put('/users/profile', authenticate, async (req, res) => {
-  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, lat, lng, public_key } = req.body;
+  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, lat, lng, public_key, avatar } = req.body;
   try {
     const existing = await User.findById(req.user.id);
     if (!existing) return res.status(404).json({ error: 'User not found' });
@@ -355,6 +355,7 @@ app.put('/users/profile', authenticate, async (req, res) => {
       if (lat !== undefined) existing.lat = lat;
       if (lng !== undefined) existing.lng = lng;
       if (public_key !== undefined) existing.public_key = public_key;
+      if (avatar !== undefined) existing.avatar = avatar;
 
     await existing.save();
 

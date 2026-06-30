@@ -22,6 +22,8 @@ export default function ProfileEditPage() {
     lat: 0,
     lng: 0
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -46,6 +48,7 @@ export default function ProfileEditPage() {
         lat: user.lat || 0,
         lng: user.lng || 0
       });
+      setAvatarPreview(user.avatar || null);
     }
   }, [user]);
 
@@ -83,16 +86,38 @@ export default function ProfileEditPage() {
     });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMsg('');
     try {
+      let avatarUrl = user?.avatar || '';
+      if (avatarFile) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', avatarFile);
+        const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`, {
+          method: 'POST',
+          body: formDataUpload
+        });
+        const imgData = await imgRes.json();
+        if (!imgData.success) throw new Error('Failed to upload image');
+        avatarUrl = imgData.data.url;
+      }
+
       const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(s => s);
       const res = await fetchAPI('/users/profile', {
         method: 'PUT',
         body: JSON.stringify({
           ...formData,
+          avatar: avatarUrl,
           skills: JSON.stringify(skillsArray)
         })
       });
@@ -163,6 +188,19 @@ export default function ProfileEditPage() {
       
       <GlowCard variant="purple" tilt={false}>
       <form onSubmit={handleSave} className="space-y-5 sm:space-y-6 p-5 sm:p-8">
+        
+        <div>
+          <label className="block text-sm text-gray-400 mb-1">Profile Picture</label>
+          <div className="flex items-center gap-4 bg-black/50 border border-white/10 rounded-lg p-3">
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="preview" className="w-12 h-12 rounded-full object-cover border border-[#58A6FF]" />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-[#8B949E]">Pic</div>
+            )}
+            <input type="file" accept="image/*" onChange={handleFileChange} className="text-sm text-[#8B949E] file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#58A6FF]/10 file:text-[#58A6FF] hover:file:bg-[#58A6FF]/20" />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label className="block text-sm text-gray-400 mb-1">Name</label>
