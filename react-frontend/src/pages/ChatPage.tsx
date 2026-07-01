@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { useLocation } from 'react-router-dom';
-import { importPrivateKey, importPublicKey, deriveSharedSecret, encryptMessage, decryptMessage } from '../lib/crypto';
 import 'highlight.js/styles/github-dark.css';
 import { FileText, Search, Settings, ArrowLeft, X, FileEdit, CornerDownLeft, Lock, Lightbulb, Check, Terminal } from 'lucide-react';
 
@@ -16,7 +15,6 @@ export default function ChatPage() {
   const [content, setContent] = useState('');
   const [connections, setConnections] = useState<any[]>([]);
   const [activeChat, setActiveChat] = useState<any>(targetUser || null);
-  const [sharedSecret, setSharedSecret] = useState<CryptoKey | null>(null);
   const [showSidebar, setShowSidebar] = useState(!targetUser);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,39 +40,6 @@ export default function ChatPage() {
       }
     });
   }, [user]);
-
-  useEffect(() => {
-    if (!activeChat || !activeChat.public_key) return;
-    
-    const getPrivKey = () => {
-      if (!user) return null;
-      const privKeyPem = localStorage.getItem(`private_key_${user.id}`);
-      if (!privKeyPem) {
-        // Fallback for existing users
-        const oldKey = localStorage.getItem('private_key');
-        if (oldKey) {
-          localStorage.setItem(`private_key_${user.id}`, oldKey);
-          return oldKey;
-        }
-        return null;
-      }
-      return privKeyPem;
-    };
-    
-    const deriveKey = async () => {
-      try {
-        const privKeyPem = getPrivKey();
-        if (!privKeyPem) return;
-        
-        const privKey = await importPrivateKey(privKeyPem);
-        const pubKey = await importPublicKey(activeChat.public_key);
-        const secret = await deriveSharedSecret(privKey, pubKey);
-        setSharedSecret(secret);
-      } catch (err) {
-        console.error("Failed to derive shared secret", err);
-      }
-    };
-    deriveKey();
 
     fetchAPI(`/connections/${activeChat.user_id}/clashes`).then(data => {
       setClashes(data.clashes || []);
@@ -122,20 +87,11 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-    if (!activeChat || !sharedSecret) return;
+    if (!activeChat) return;
     const loadMessages = async () => {
       try {
         const data = await fetchAPI(`/messages/${activeChat.user_id}`);
-        const decryptedMsgs = await Promise.all(data.map(async (msg: any) => {
-          try {
-            const dec = await decryptMessage(msg.content, sharedSecret);
-            const isFailed = dec.startsWith('[Encrypted message - Decryption failed');
-            return { ...msg, content: dec, failed: isFailed };
-          } catch(e: any) {
-             return { ...msg, content: `[Encrypted message - Decryption failed: ${e.message}]`, failed: true };
-          }
-        }));
-        setMessages(decryptedMsgs);
+        setMessages(data);
       } catch (err) {
         console.error(err);
       }
@@ -144,23 +100,22 @@ export default function ChatPage() {
     
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
-  }, [activeChat, sharedSecret]);
+  }, [activeChat]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, gateOpen]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() || !activeChat || !sharedSecret) return;
+    if (!content.trim() || !activeChat) return;
     
     try {
-      const encryptedText = await encryptMessage(content, sharedSecret);
       const msg = await fetchAPI('/messages', {
         method: 'POST',
-        body: JSON.stringify({ receiverId: activeChat.user_id, content: encryptedText })
+        body: JSON.stringify({ receiverId: activeChat.user_id, content: content })
       });
-      setMessages(prev => [...prev, { ...msg, content }]);
+      setMessages(prev => [...prev, msg]);
       setContent('');
     } catch (err) {
       alert("Failed to send message");
@@ -285,7 +240,7 @@ export default function ChatPage() {
                 {/* Messages as Code Comments */}
                 <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-1 font-mono text-xs sm:text-sm leading-relaxed">
                   <div className="text-[#8B949E] mb-4 sm:mb-6 hidden sm:block">
-                    {`/**\n * Pair Programming Session\n * Target: ${activeChat.name}\n * Role: ${activeChat.role}\n * Status: Secure Encrypted Channel\n */`}
+                    {`/**\n * Pair Programming Session\n * Target: ${activeChat.name}\n * Role: ${activeChat.role}\n * Status: Secure Channel\n */`}
                   </div>
 
                   {messages.length === 0 ? (

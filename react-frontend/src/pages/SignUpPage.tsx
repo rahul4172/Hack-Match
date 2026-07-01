@@ -5,7 +5,6 @@ import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
-import { generateKeyPair, exportPublicKey, exportPrivateKey } from '../lib/crypto';
 import { MapPin, CheckCircle } from 'lucide-react';
 
 export default function SignUpPage() {
@@ -93,16 +92,10 @@ export default function SignUpPage() {
     }
 
     try {
-      const keyPair = await generateKeyPair();
-      const pubKey = await exportPublicKey(keyPair.publicKey);
-      const privKey = await exportPrivateKey(keyPair.privateKey);
-
       const res = await fetchAPI('/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ email, password, name, public_key: pubKey, lat, lng, location, avatar: avatarUrl }),
+        body: JSON.stringify({ email, password, name, lat, lng, location, avatar: avatarUrl }),
       });
-      await fetchAPI('/users/profile', { method: 'PUT', body: JSON.stringify({ public_key: pubKey }) });
-      localStorage.setItem(`private_key_${res.user.id}`, privKey);
       localStorage.setItem('token', res.token);
       signIn(res.token, res.user);
       navigate('/onboarding');

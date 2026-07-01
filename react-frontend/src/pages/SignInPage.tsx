@@ -5,8 +5,6 @@ import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
-import { generateKeyPair, exportPublicKey, exportPrivateKey } from '../lib/crypto';
-
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,21 +25,7 @@ export default function SignInPage() {
       });
       localStorage.setItem('token', res.token);
 
-      let existingKey = localStorage.getItem(`private_key_${res.user.id}`);
-      if (!existingKey) {
-        existingKey = localStorage.getItem('private_key');
-        if (existingKey) {
-          localStorage.setItem(`private_key_${res.user.id}`, existingKey);
-        }
-      }
 
-      if (!existingKey) {
-        const keyPair = await generateKeyPair();
-        const pubKey = await exportPublicKey(keyPair.publicKey);
-        const privKey = await exportPrivateKey(keyPair.privateKey);
-        await fetchAPI('/users/profile', { method: 'PUT', body: JSON.stringify({ public_key: pubKey }) });
-        localStorage.setItem(`private_key_${res.user.id}`, privKey);
-      }
 
       signIn(res.token, res.user);
       navigate('/discover');

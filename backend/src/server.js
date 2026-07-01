@@ -151,7 +151,7 @@ function calculateSynergy(u1, u2, distance_km) {
 
 // ---------------- AUTH ----------------
 app.post('/auth/signup', authLimiter, async (req, res) => {
-  const { email, password, name, public_key, lat, lng, location, avatar } = req.body;
+  const { email, password, name, lat, lng, location, avatar } = req.body;
   if (!email || !password || !name) return res.status(400).json({ error: 'Email, password, and name are required' });
   if (lat === undefined || lng === undefined) return res.status(400).json({ error: 'Location tracking is mandatory to join HackMatch' });
   if (!avatar) return res.status(400).json({ error: 'A profile picture URL is mandatory to join HackMatch' });
@@ -162,7 +162,7 @@ app.post('/auth/signup', authLimiter, async (req, res) => {
 
     const hash = bcrypt.hashSync(password, 10);
     const user = await User.create({
-      email, password: hash, name, bio: 'Ready to build something awesome.', skills: '[]', role: 'Developer', public_key: public_key || null, lat, lng, location: location || '', avatar
+      email, password: hash, name, bio: 'Ready to build something awesome.', skills: '[]', role: 'Developer', lat, lng, location: location || '', avatar
     });
 
     const token = jwt.sign({ id: user._id, email }, JWT_SECRET, { expiresIn: '7d' });
@@ -338,7 +338,7 @@ app.get('/users', authenticate, async (req, res) => {
 });
 
 app.put('/users/profile', authenticate, async (req, res) => {
-  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, lat, lng, public_key, avatar } = req.body;
+  const { name, bio, skills, winnings, learnings, github, linkedin, role, location, lat, lng, avatar } = req.body;
   try {
     const existing = await User.findById(req.user.id);
     if (!existing) return res.status(404).json({ error: 'User not found' });
@@ -354,7 +354,7 @@ app.put('/users/profile', authenticate, async (req, res) => {
       if (location !== undefined) existing.location = location;
       if (lat !== undefined) existing.lat = lat;
       if (lng !== undefined) existing.lng = lng;
-      if (public_key !== undefined) existing.public_key = public_key;
+
       if (avatar !== undefined) existing.avatar = avatar;
 
     await existing.save();
@@ -367,12 +367,50 @@ app.put('/users/profile', authenticate, async (req, res) => {
   }
 });
 
-app.get('/users/nearby', authenticate, (req, res) => {
-  res.json([
-    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Sarah Chen', role: 'Full Stack Engineer', bio: 'Building scalable web apps. Looking for a weekend hackathon team!', avatar: 'https://i.pravatar.cc/150?u=sarah', location: 'San Francisco, CA (2 miles away)', tech_stack: ['React', 'TypeScript', 'Node.js'] },
-    { id: new mongoose.Types.ObjectId().toHexString(), name: 'David Kumar', role: 'AI / ML Researcher', bio: "Training tiny LLMs on edge devices. Let's build the next AI agent.", avatar: 'https://i.pravatar.cc/150?u=david', location: 'San Francisco, CA (5 miles away)', tech_stack: ['Python', 'PyTorch', 'C++'] },
-    { id: new mongoose.Types.ObjectId().toHexString(), name: 'Elena Rodriguez', role: 'Product Designer', bio: 'UI/UX enthusiast. I make things look pretty and user-friendly.', avatar: 'https://i.pravatar.cc/150?u=elena', location: 'San Jose, CA (40 miles away)', tech_stack: ['Figma', 'Framer', 'CSS'] },
-  ]);
+app.get('/users/nearby', authenticate, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.user.id);
+    if (!currentUser || currentUser.lat == null || currentUser.lng == null) {
+      return res.json([]);
+    }
+
+    const users = await User.find({
+      _id: { $ne: currentUser._id },
+      lat: { $ne: null },
+      lng: { $ne: null }
+    });
+
+    const getDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 3958.8; // Radius of earth in miles
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    const nearbyUsers = users.map(u => {
+      const distance = getDistance(currentUser.lat, currentUser.lng, u.lat, u.lng);
+      return {
+        id: u._id.toHexString(),
+        name: u.name,
+        role: u.role,
+        bio: u.bio,
+        avatar: u.avatar,
+        location: `${u.location || 'Unknown'} (${Math.round(distance)} miles away)`,
+        tech_stack: JSON.parse(u.skills || '[]'),
+        distance: distance
+      };
+    }).filter(u => u.distance <= 50)
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 10);
+
+    res.json(nearbyUsers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/users/:id', authenticate, async (req, res) => {
@@ -570,7 +608,7 @@ app.get('/connections', authenticate, async (req, res) => {
       cObj.name = otherUser.name;
       cObj.avatar = otherUser.avatar;
       cObj.role = otherUser.role;
-      cObj.public_key = otherUser.public_key;
+
       
       cObj.sender_id = c.sender_id._id;
       cObj.receiver_id = c.receiver_id._id;

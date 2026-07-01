@@ -12,7 +12,6 @@ const userSchema = new mongoose.Schema({
   github: { type: String },
   linkedin: { type: String },
   avatar: { type: String },
-  public_key: { type: String },
   location: { type: String },
   lat: { type: Number },
   lng: { type: Number },
