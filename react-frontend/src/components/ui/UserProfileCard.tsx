@@ -32,7 +32,7 @@ export function UserProfileCard({
   className = '',
 }: UserProfileCardProps) {
   return (
-    <div className={`relative w-full h-full rounded-[20px] overflow-hidden shadow-2xl group transition-all duration-300 hover:scale-[1.02] bg-[#0A0A0F] ${className}`}>
+    <div className={`relative w-full h-full rounded-[20px] overflow-hidden shadow-2xl group bg-[#0A0A0F] ${className}`}>
       
       {/* 1. Full Bleed Background Photo */}
       <div className="absolute inset-0 w-full h-full">
