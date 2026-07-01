@@ -211,7 +211,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4, type: 'spring' }}
-          className="flex-1 w-full flex justify-center lg:justify-end mt-4 md:mt-0 scale-90 lg:scale-100 origin-right"
+          className="flex-1 w-full flex justify-center lg:justify-end mt-8 md:mt-0 scale-90 lg:scale-100 origin-center lg:origin-right"
         >
           <AutoSwipeDeck />
         </motion.div>
