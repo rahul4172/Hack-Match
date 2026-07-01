@@ -5,11 +5,12 @@ import { useAuth } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { GlowCard } from '../components/ui/GlowCard';
-import { MapPin, CheckCircle } from 'lucide-react';
+import { MapPin, CheckCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -161,13 +162,22 @@ export default function SignUpPage() {
               </div>
               <div>
                 <label className="block text-sm font-mono text-[#8B949E] mb-1.5">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#BC8CFF]/50 transition-all text-sm"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 pr-10 text-white focus:outline-none focus:border-[#BC8CFF]/50 transition-all text-sm"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8B949E] hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-mono text-[#8B949E] mb-1.5">Location (Required)</label>
