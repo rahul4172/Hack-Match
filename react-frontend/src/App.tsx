@@ -240,7 +240,7 @@ function App() {
         {godMode && <MatrixBackground />}
         <NavBar />
 
-        <div className="relative z-10 pt-14 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pt-16 md:pb-0">
+        <div className="relative z-10 pt-24 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pt-28 md:pb-0">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/signin" element={<SignInPage />} />
