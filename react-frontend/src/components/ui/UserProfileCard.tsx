@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Target, Check, Lightbulb, Code2 } from 'lucide-react';
 
 export interface UserProfileCardProps {

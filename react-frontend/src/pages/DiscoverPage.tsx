@@ -6,7 +6,7 @@ import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { UserProfileCard } from '../components/ui/UserProfileCard';
-import { Lightbulb, Code2, Search, Heart, User, Check, Zap, Target } from 'lucide-react';
+import { Lightbulb, Search, Heart, User, Check, Zap } from 'lucide-react';
 import { calculateLevelData, generateBadges } from '../lib/gamification';
 
 // --- Filter Component ---
