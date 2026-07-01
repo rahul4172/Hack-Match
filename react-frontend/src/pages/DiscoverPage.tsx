@@ -93,7 +93,7 @@ function SwipeCard({ item, isTop, onSwipe, currentUserLocation }: any) {
       style={{ x, y, rotate }}
       initial={{ scale: 0.8, opacity: 0, y: 50 }}
       animate={!isTop ? { scale: 0.95, opacity: 0.8, y: 10 } : { scale: 1, opacity: 1, y: 0 }}
-      whileHover={isTop ? { scale: 1.02, transition: { duration: 0.2 } } : {}}
+      whileHover={isTop ? { scale: 1.03, y: -5, transition: { type: 'spring', stiffness: 300, damping: 20 } } : {}}
       exit={{ x: x.get() > 0 ? 300 : -300, opacity: 0, rotate: x.get() > 0 ? 15 : -15 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       className={`absolute inset-0 w-full h-full ${isTop ? 'z-10 cursor-grab active:cursor-grabbing' : 'z-0 pointer-events-none'}`}
@@ -302,7 +302,7 @@ export default function DiscoverPage() {
           </div>
         ) : currentIndex < users.length ? (
           <div className="w-full h-full flex flex-col items-center justify-center pt-2 pb-6">
-            <div className="relative w-[95%] max-w-[300px] sm:max-w-[320px] flex-none h-[440px] sm:h-[480px] mb-6 perspective-1000 mt-4">
+            <div className="relative w-[90%] max-w-[280px] sm:max-w-[300px] flex-none h-[400px] sm:h-[430px] mb-4 perspective-1000 mt-2">
               <AnimatePresence>
                 {users.slice(currentIndex, currentIndex + 2).reverse().map((item, i, arr) => {
                   const isTop = i === arr.length - 1;
