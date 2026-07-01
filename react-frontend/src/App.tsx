@@ -50,14 +50,15 @@ function NavBar() {
 
   return (
     <>
-      <nav
-        className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${
-          scrolled
-            ? 'bg-[#0D1117]/80 backdrop-blur-[20px] border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
-            : 'bg-transparent border-transparent'
-        } px-4 md:px-8 py-4 flex justify-between items-center`}
-      >
-        <Link to="/discover" className="flex items-center gap-2 z-50">
+      <div className="fixed top-4 w-full z-50 flex justify-center px-4 pointer-events-none transition-all duration-300">
+        <nav
+          className={`pointer-events-auto w-full max-w-6xl transition-all duration-300 rounded-2xl border ${
+            scrolled
+              ? 'bg-[#0D1117]/80 backdrop-blur-xl border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]'
+              : 'bg-[#0D1117]/40 backdrop-blur-md border-white/5 shadow-lg'
+          } px-4 md:px-6 py-2.5 flex justify-between items-center`}
+        >
+          <Link to="/discover" className="flex items-center gap-2 z-50 hover:opacity-80 transition-opacity">
           <img src="/logo.png?v=2" alt="HackMatch Logo" className="w-8 h-8 rounded-lg shadow-lg shadow-[#8B5CF6]/20 object-contain" />
           <span className="text-white font-display font-bold text-lg tracking-tight hidden sm:block">
             HackMatch
@@ -108,14 +109,15 @@ function NavBar() {
         </div>
 
         {/* Mobile Hamburger */}
-        <button
-          onClick={() => setMenuOpen(true)}
-          className="md:hidden text-slate-300 hover:text-white transition-colors p-2 -mr-2 rounded-lg hover:bg-white/5 z-50"
-          aria-label="Open menu"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-      </nav>
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="md:hidden text-slate-300 hover:text-white transition-colors p-2 -mr-2 rounded-lg hover:bg-white/5 z-50"
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </nav>
+      </div>
 
       {/* Mobile Slide-in Drawer */}
       <AnimatePresence>
