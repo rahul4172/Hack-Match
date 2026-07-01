@@ -143,7 +143,9 @@ export default function ChatPage() {
   if (!user) return <div className="p-8 text-center mt-16 text-gray-500">Please sign in to access terminal.</div>;
 
   return (
-    <div className="flex h-[calc(100vh-60px)] bg-[#050505] text-[#C9D1D9] font-sans overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] -mt-24 md:-mt-28 bg-[#050505] text-[#C9D1D9] font-sans overflow-hidden relative">
+      <div className="h-24 md:h-28 shrink-0 w-full pointer-events-none"></div>
+      <div className="flex flex-1 overflow-hidden relative">
       {/* Background glow for the chat */}
       <div className="absolute inset-0 aurora-bg opacity-20 pointer-events-none"></div>
       
@@ -435,6 +437,7 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
