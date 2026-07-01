@@ -41,6 +41,9 @@ export default function ChatPage() {
     });
   }, [user]);
 
+  useEffect(() => {
+    if (!activeChat) return;
+
     fetchAPI(`/connections/${activeChat.user_id}/clashes`).then(data => {
       setClashes(data.clashes || []);
       if (data.connectionId) setConnectionId(data.connectionId);
@@ -102,9 +105,7 @@ export default function ChatPage() {
     return () => clearInterval(interval);
   }, [activeChat]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, gateOpen]);
+
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +131,10 @@ export default function ChatPage() {
   const hasISubmitted = clashes.some(c => c.user_id === user?.id);
   const hasTheySubmitted = clashes.some(c => c.user_id === activeChat?.user_id);
   const gateOpen = hasISubmitted && hasTheySubmitted;
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, gateOpen]);
 
   const filteredConnections = connections.filter(conn => 
     conn.name.toLowerCase().includes(searchQuery.toLowerCase())
