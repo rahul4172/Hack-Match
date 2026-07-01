@@ -5,6 +5,7 @@ import type { UserProfile } from '../store/useAuth';
 import { fetchAPI } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { UserProfileCard } from '../components/ui/UserProfileCard';
 import { Lightbulb, Code2, Search, Heart, User, Check, Zap, Target } from 'lucide-react';
 import { calculateLevelData, generateBadges } from '../lib/gamification';
 
@@ -94,87 +95,37 @@ function SwipeCard({ item, isTop, onSwipe, currentUserLocation }: any) {
       animate={!isTop ? { scale: 0.95, opacity: 0.8, y: 10 } : { scale: 1, opacity: 1, y: 0 }}
       exit={{ x: x.get() > 0 ? 300 : -300, opacity: 0, rotate: x.get() > 0 ? 15 : -15 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className={`absolute inset-0 w-full h-full bg-[#0D1117] rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col ${isTop ? 'z-10 cursor-grab active:cursor-grabbing' : 'z-0 pointer-events-none'}`}
+      className={`absolute inset-0 w-full h-full ${isTop ? 'z-10 cursor-grab active:cursor-grabbing' : 'z-0 pointer-events-none'}`}
     >
       {/* Stamps */}
       {isTop && (
         <>
-          <motion.div style={{ opacity: likeOpacity }} className="absolute top-12 left-8 z-50 transform -rotate-12">
-            <div className="border-4 border-[#3FB950] text-[#3FB950] text-4xl font-black px-4 py-1 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(63,185,80,0.5)]">MERGE</div>
+          <motion.div style={{ opacity: likeOpacity }} className="absolute top-12 left-8 z-50 transform -rotate-12 pointer-events-none">
+            <div className="border-4 border-[#3FB950] text-[#3FB950] text-3xl font-black px-4 py-1 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(63,185,80,0.5)] bg-black/40 backdrop-blur-md">MERGE</div>
           </motion.div>
-          <motion.div style={{ opacity: nopeOpacity }} className="absolute top-12 right-8 z-50 transform rotate-12">
-            <div className="border-4 border-red-500 text-red-500 text-4xl font-black px-4 py-1 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.5)]">DROP</div>
+          <motion.div style={{ opacity: nopeOpacity }} className="absolute top-12 right-8 z-50 transform rotate-12 pointer-events-none">
+            <div className="border-4 border-red-500 text-red-500 text-3xl font-black px-4 py-1 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.5)] bg-black/40 backdrop-blur-md">DROP</div>
           </motion.div>
-          <motion.div style={{ opacity: superLikeOpacity }} className="absolute bottom-32 left-1/2 -translate-x-1/2 z-50 transform -rotate-6">
-            <div className="border-4 border-[#BC8CFF] text-[#BC8CFF] text-4xl font-black px-4 py-1 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(188,140,255,0.5)]">STAR</div>
+          <motion.div style={{ opacity: superLikeOpacity }} className="absolute bottom-32 left-1/2 -translate-x-1/2 z-50 transform -rotate-6 pointer-events-none">
+            <div className="border-4 border-[#BC8CFF] text-[#BC8CFF] text-3xl font-black px-4 py-1 rounded-xl uppercase tracking-widest shadow-[0_0_20px_rgba(188,140,255,0.5)] bg-black/40 backdrop-blur-md">STAR</div>
           </motion.div>
         </>
       )}
 
-      {/* Profile Image Area */}
-      <div className="relative h-[55%] shrink-0 bg-gradient-to-br from-[#161B22] to-[#050505]">
-        {u.avatar ? (
-          <img src={u.avatar} alt="avatar" className="w-full h-full object-cover opacity-80 mix-blend-luminosity" draggable="false" />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-[#58A6FF]/20">
-            {isIdea ? <Lightbulb className="w-32 h-32" /> : <Code2 className="w-32 h-32" />}
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0D1117] via-[#0D1117]/40 to-transparent"></div>
-        
-        <div className="absolute bottom-4 left-6 right-6 flex justify-between items-end">
-          <div>
-            <h2 className="text-3xl font-extrabold text-white flex items-center gap-3 drop-shadow-md flex-wrap">
-              {isIdea ? u.title : `${u.name}, ${Math.floor(Math.random() * 6) + 18}`}
-              {!isIdea && stats && (
-                <span className={`text-[10px] px-2 py-1 rounded-full border font-mono font-bold ${stats.rankColor} ${stats.rankBorder} ${stats.rankBg}`}>{stats.rank}</span>
-              )}
-              {distance !== undefined && distance !== null ? (
-                <span className="text-[10px] px-2 py-1 rounded-full border font-mono font-bold text-red-400 border-red-400/50 bg-red-400/10 flex items-center gap-1">📍 {distance} km away</span>
-              ) : isNearYouTextMatch ? (
-                <span className="text-[10px] px-2 py-1 rounded-full border font-mono font-bold text-red-400 border-red-400/50 bg-red-400/10 flex items-center gap-1">📍 Near You</span>
-              ) : null}
-            </h2>
-            <p className="text-sm font-mono text-[#58A6FF] drop-shadow-md">
-              {isIdea ? `By ${u.creator_name}` : u.role}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Info Area */}
-      <div className="p-6 flex-1 overflow-y-auto custom-scrollbar bg-[#0D1117]">
-        {!isIdea && stats && (
-          <div className="flex gap-4 font-mono text-xs mb-6 text-[#C9D1D9] border-b border-white/5 pb-4">
-            <div className="flex flex-col items-center gap-1"><span className="flex items-center gap-1 font-bold text-white text-lg"><Target className={`w-4 h-4 ${stats.rankColor}`} /> Lvl {stats.level}</span>XP {stats.xp.toLocaleString()}</div>
-            {badges.slice(0, 2).map((b: any) => {
-              const Icon = b.icon;
-              return (
-                <div key={b.id} className="flex flex-col items-center gap-1"><span className={`flex items-center gap-1 font-bold text-white text-lg`}><Icon className={`w-4 h-4 ${b.color}`} /> {b.label.split(' ')[0]}</span>Badge</div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="mb-6">
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">About</h4>
-          <p className="text-[#C9D1D9] text-base leading-relaxed">
-            {isIdea ? `"${u.pitch}"` : u.bio}
-          </p>
-        </div>
-
-        <div className="mb-4">
-          <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2">Stack</h4>
-          <div className="flex flex-wrap gap-2">
-            {skills.map((s: string) => (
-              <span key={s} className="px-3 py-1 text-xs font-bold bg-[#161B22] text-[#C9D1D9] rounded-full border border-white/10">
-                {s}
-              </span>
-            ))}
-            {isIdea && <span className="px-3 py-1 text-xs font-bold bg-[#BC8CFF]/10 text-[#BC8CFF] rounded-full border border-[#BC8CFF]/20">{u.roles_needed}</span>}
-          </div>
-        </div>
-      </div>
+      <UserProfileCard
+        name={isIdea ? u.title : u.name}
+        age={!isIdea ? Math.floor(Math.random() * 6) + 18 : undefined}
+        role={isIdea ? `By ${u.creator_name}` : u.role}
+        avatar={u.avatar}
+        level={stats?.level}
+        xp={stats?.xp}
+        badge={badges[0]}
+        about={isIdea ? `"${u.pitch}"` : u.bio}
+        stack={isIdea && u.roles_needed ? [...skills, `Needs: ${u.roles_needed}`] : skills}
+        isIdea={isIdea}
+        distance={distance}
+        isNearYou={isNearYouTextMatch}
+      />
     </motion.div>
   );
 }
@@ -323,7 +274,7 @@ export default function DiscoverPage() {
       <div className="flex-1 w-full flex flex-col items-center h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] overflow-hidden">
         
         {/* Search Bar */}
-        <div className="w-full max-w-[400px] px-4 mt-2">
+        <div className="w-full max-w-[360px] px-4 mt-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input 
@@ -350,7 +301,7 @@ export default function DiscoverPage() {
           </div>
         ) : currentIndex < users.length ? (
           <div className="w-full h-full flex flex-col items-center justify-center pt-2 pb-6">
-            <div className="relative w-[95%] max-w-[400px] flex-1 min-h-[400px] mb-6 perspective-1000">
+            <div className="relative w-[95%] max-w-[340px] flex-none h-[520px] sm:h-[560px] mb-6 perspective-1000">
               <AnimatePresence>
                 {users.slice(currentIndex, currentIndex + 2).reverse().map((item, i, arr) => {
                   const isTop = i === arr.length - 1;
@@ -377,7 +328,7 @@ export default function DiscoverPage() {
         ) : (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            className="text-center p-12 glass rounded-3xl w-full max-w-[400px] mt-12 border border-white/5 shadow-2xl relative overflow-hidden"
+            className="text-center p-12 glass rounded-3xl w-full max-w-[340px] mt-12 border border-white/5 shadow-2xl relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-[#58A6FF]/5 to-transparent pointer-events-none"></div>
             <div className="flex justify-center mb-6">
