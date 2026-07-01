@@ -142,7 +142,7 @@ export default function LandingPage() {
     <div className="bg-transparent text-[#C9D1D9] selection:bg-white/20 overflow-x-hidden font-sans">
       
       {/* --- HERO SECTION --- */}
-      <section className="relative flex flex-col md:flex-row items-center justify-center px-6 lg:px-20 z-10 max-w-7xl mx-auto gap-8 lg:gap-16 pt-32 md:pt-40 pb-20">
+      <section className="relative flex flex-col md:flex-row items-center justify-center px-6 lg:px-20 z-10 max-w-7xl mx-auto gap-8 lg:gap-16 pt-8 md:pt-12 pb-20">
         
         {/* Left: Copy */}
         <div className="flex-1 flex flex-col items-start text-left max-w-2xl">
