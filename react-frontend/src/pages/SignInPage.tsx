@@ -27,7 +27,15 @@ export default function SignInPage() {
       });
       localStorage.setItem('token', res.token);
 
-      if (!localStorage.getItem('private_key')) {
+      let existingKey = localStorage.getItem(`private_key_${res.user.id}`);
+      if (!existingKey) {
+        existingKey = localStorage.getItem('private_key');
+        if (existingKey) {
+          localStorage.setItem(`private_key_${res.user.id}`, existingKey);
+        }
+      }
+
+      if (!existingKey) {
         const keyPair = await generateKeyPair();
         const pubKey = await exportPublicKey(keyPair.publicKey);
         const privKey = await exportPrivateKey(keyPair.privateKey);
